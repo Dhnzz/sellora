@@ -64,9 +64,4 @@ class Product extends Model
     {
         return $this->hasMany(StockAdjustments::class, 'product_id');
     }
-
-    public function product_bundle_item(): HasMany
-    {
-        return $this->hasMany(ProductBundleItem::class, 'product_id');
-    }
 }
