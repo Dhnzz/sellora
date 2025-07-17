@@ -14,12 +14,16 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('purchase_order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('admin_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sales_agent_id')->constrained()->cascadeOnDelete();
             $table->date('invoice_date');
             $table->decimal('discount_percent', 5, 2)->nullable()->check('discount_percent >= 0 AND discount_percent <= 100');
-            $table->decimal('total_amount', 15, 4)->check('total_amount >= 0');
-            $table->enum('payment_status', ['pending','paid'])->default('pending');
+            $table->decimal('initial_total_amount', 15, 4)->check('initial_total_amount >= 0');
+            $table->decimal('final_total_amount', 15, 4)->check('final_total_amount >= 0');
+            $table->text('note');
+            $table->enum('transaction_status', ['process', 'success'])->default('process');
             $table->timestamp('delivery_confirmed_at');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

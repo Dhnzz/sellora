@@ -12,7 +12,8 @@ class SalesTransactionItem extends Model
     protected $fillable = [
         'sales_transaction_id',
         'product_id',
-        'quantity',
+        'quantity_ordered',
+        'quantity_sold',
         'msu_price',
     ];
 
@@ -23,6 +24,6 @@ class SalesTransactionItem extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'sales_transaction_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }

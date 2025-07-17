@@ -6,7 +6,7 @@ namespace App\Models;
 use App\Models\Admin;
 use App\Models\Owner;
 use App\Models\Customer;
-use App\Models\SalesPerson;
+use App\Models\SalesAgent;
 use App\Models\WarehouseManager;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
@@ -62,9 +62,9 @@ class User extends Authenticatable
         return $this->hasOne(Admin::class, 'user_id');
     }
 
-    public function sales_person(): HasOne
+    public function sales_agent(): HasOne
     {
-        return $this->hasOne(SalesPerson::class, 'user_id');
+        return $this->hasOne(SalesAgent::class, 'user_id');
     }
 
     public function warehouse_manager(): HasOne

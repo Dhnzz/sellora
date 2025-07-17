@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,8 +16,12 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->text('reason');
             $table->integer('quantity');
+            $table->enum('adjustment_type', ['increase', 'decrease']);
+            $table->enum('source_type', ['supplier_purchase', 'delivery_return', 'physical_check']);
+            $table->foreignId('source_id')->nullable();
             $table->date('adjustment_date');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

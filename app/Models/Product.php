@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\Stock;
 use App\Models\ProductUnit;
 use App\Models\ProductBrand;
-use App\Models\StockAdjustments;
+use App\Models\StockAdjustment;
 use App\Models\ProductBundleItem;
 use App\Models\ProductReturnItem;
 use App\Models\PurchaseOrderItem;
@@ -20,7 +20,7 @@ class Product extends Model
     protected $fillable = [
         'product_brand_id',
         'name',
-        'msu',
+        'minimum_selling_unit_id',
         'convertion_factors',
         'selling_price',
     ];
@@ -32,7 +32,7 @@ class Product extends Model
 
     public function product_unit(): BelongsTo
     {
-        return $this->belongsTo(ProductUnit::class, 'product_brand_id');
+        return $this->belongsTo(ProductUnit::class, 'minimum_selling_unit_id');
     }
 
     public function stock(): HasOne
@@ -62,6 +62,11 @@ class Product extends Model
 
     public function stock_adjustments(): HasMany
     {
-        return $this->hasMany(StockAdjustments::class, 'product_id');
+        return $this->hasMany(StockAdjustment::class, 'product_id');
+    }
+
+    public function product_bundle_items(): HasMany
+    {
+        return $this->hasMany(ProductBundleItem::class, 'product_id');
     }
 }

@@ -14,6 +14,8 @@ class StockAdjustment extends Model
         'product_id',
         'reason',
         'quantity',
+        'adjustment_type',
+        'source_type',
         'adjustment_date',
     ];
 

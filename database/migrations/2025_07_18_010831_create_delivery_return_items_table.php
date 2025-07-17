@@ -4,19 +4,19 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('product_return_items', function (Blueprint $table) {
+        Schema::create('delivery_return_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_return_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('delivery_return_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity')->check('quantity > 0');
+            $table->integer('quantity_returned');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_return_items');
+        Schema::dropIfExists('delivery_return_items');
     }
 };

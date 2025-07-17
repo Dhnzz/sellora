@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,9 +14,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('sales_transaction_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity');
-            $table->decimal('msu_price', 12, 4)->check('quantity > 0');
+            $table->integer('quantity_ordered');
+            $table->integer('quantity_sold');
+            $table->decimal('msu_price', 12, 4)->check('msu_price > 0');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

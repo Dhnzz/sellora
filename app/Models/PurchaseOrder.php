@@ -15,21 +15,14 @@ class PurchaseOrder extends Model
 {
     protected $fillable = [
         'customer_id',
-        'sales_agent_id',
         'order_date',
         'delivery_date',
         'status',
-        'discount_percent',
     ];
 
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'customer_id');
-    }
-
-    public function sales_agent(): BelongsTo
-    {
-        return $this->belongsTo(SalesAgent::class, 'sales_agent_id');
     }
 
     public function purchase_order_items(): HasMany
@@ -39,6 +32,6 @@ class PurchaseOrder extends Model
 
     public function sales_transaction(): HasOne
     {
-        return $this->hasOne(SalesTransaction::class, 'sales_transaction_id');
+        return $this->hasOne(SalesTransaction::class, 'purchase_order_id');
     }
 }

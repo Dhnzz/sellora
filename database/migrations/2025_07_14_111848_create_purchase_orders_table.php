@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cusomter_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sales_agent_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
             $table->date('order_date');
             $table->date('delivery_date');
-            $table->enum('status', ['pending', 'confirmed', 'delivered', 'returned'])->default('pending');
-            $table->decimal('discount_percent', 5, 2)->nullable()->check('discount_percent >= 0 AND discount_percent <= 100');
+            $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
             $table->timestamps();
             $table->softDeletes();
         });

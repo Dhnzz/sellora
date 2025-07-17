@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Models\User;
 use App\Models\SalesAgent;
 use App\Models\PurchaseOrder;
-use App\Models\ProductReturn;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,10 +32,5 @@ class Customer extends Model
     public function purchase_orders(): HasMany
     {
         return $this->hasMany(PurchaseOrder::class, 'customer_id');
-    }
-
-    public function product_returns(): BelongsTo
-    {
-        return $this->hasMany(ProductReturn::class, 'customer_id');
     }
 }

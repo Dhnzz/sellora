@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\User;
+use App\Models\DeliveryReturn;
 use App\Models\SalesTransaction;
 use App\Models\MonthlyBookClosing;
 use Illuminate\Database\Eloquent\Model;
@@ -31,5 +32,10 @@ class Admin extends Model
     public function monthly_book_closings(): HasMany
     {
         return $this->hasMany(MonthlyBookClosing::class, 'admin_id');
+    }
+
+    public function delivery_returns(): HasMany
+    {
+        return $this->hasMany(DeliveryReturn::class, 'admin_id');
     }
 }

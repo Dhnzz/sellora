@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Models\User;
 use App\Models\IncomingSupplyTransaction;
-use App\Models\StockAdjusments;
+use App\Models\StockAdjusment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +30,6 @@ class WarehouseManager extends Model
 
     public function stock_adjustments(): HasMany
     {
-        return $this->hasMany(StockAdjusments::class, 'warehouse_manager_id');
+        return $this->hasMany(StockAdjusment::class, 'warehouse_manager_id');
     }
 }

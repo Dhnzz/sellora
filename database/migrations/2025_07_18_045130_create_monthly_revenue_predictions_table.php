@@ -10,9 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('product_brands', function (Blueprint $table) {
+        Schema::create('monthly_revenue_predictions', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->date('prediction_month');
+            $table->decimal('predicted_revenue', 15, 4);
+            $table->timestamp('prediction_date');
+            $table->unique(['prediction_month']);
             $table->timestamps();
             $table->softDeletes();
         });
@@ -23,6 +26,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_brands');
+        Schema::dropIfExists('monthly_revenue_predictions');
     }
 };

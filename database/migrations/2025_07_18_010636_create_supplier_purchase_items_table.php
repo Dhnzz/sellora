@@ -4,19 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('incoming_supply_transaction_items', function (Blueprint $table) {
+        Schema::create('supplier_purchase_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('incoming_supply_transaction_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('supplier_purchase_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->integer('quantity');
+            $table->foreignId('product_unit_id')->constrained()->cascadeOnDelete();
+            $table->decimal('product_unit_price', 15, 2);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('incoming_supply_transaction_items');
+        Schema::dropIfExists('supplier_purchase_items');
     }
 };
