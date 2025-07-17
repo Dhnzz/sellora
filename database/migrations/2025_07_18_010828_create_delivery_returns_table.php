@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->text('reason');
             $table->enum('status', ['pending', 'confirmed'])->default('pending');
             $table->foreignId('admin_id')->constrained()->cascadeOnDelete();
-            $table->timestamps('confirmed_at')->nullable();
+            $table->timestamp('confirmed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

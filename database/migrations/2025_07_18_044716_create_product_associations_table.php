@@ -18,7 +18,8 @@ return new class extends Migration {
             $table->decimal('confidence', 8, 6);
             $table->decimal('lift', 8, 6);
             $table->date('analysis_date');
-            $table->unique(['atecedent_product_ids', 'consequent_product_ids', 'analysis_date']);
+            // Tidak membuat index unik pada kolom JSON karena MySQL tidak mendukung index unik langsung pada kolom JSON.
+            // Jika perlu validasi unik, lakukan di level aplikasi.
             $table->timestamps();
             $table->softDeletes();
         });
