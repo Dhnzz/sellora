@@ -182,6 +182,7 @@ Route::middleware(['auth'])->group(function () {
                             Route::prefix('unit_convertion')
                                 ->name('unit_convertion.')
                                 ->group(function () {
+                                    Route::get('/data', [UnitConvertionController::class, 'getAll'])->name('data');
                                     Route::post('/', [UnitConvertionController::class, 'store'])->name('store');
                                 });
                         });

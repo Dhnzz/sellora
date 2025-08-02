@@ -238,6 +238,47 @@
         let dataTable
         $(document).ready(function() {
             dataTable = $('#table').DataTable({
+                processing: true, // Menampilkan indikator loading
+                serverSide: true, // Mode server-side processing
+                ajax: {
+                    url: "{{ route('owner.master_data.product.unit_convertion.data') }}", // Endpoint API untuk DataTables
+                    type: 'GET',
+                    data: function(d){
+                        d.productId = {{ $product->id }}
+                    }
+                    // Anda bisa menambahkan data tambahan ke request di sini jika diperlukan
+                    // data: function (d) {
+                    //     d.myCustomParam = 'someValue';
+                    // }
+                },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'from_unit_name',
+                        name: 'from_unit_name',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'convertion_factor',
+                        name: 'convertion_factor',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'options',
+                        name: 'options',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                ],
+                order: [
+                    [4, 'desc']
+                ],
                 layout: {
                     topStart: 'search',
                     topEnd: 'pageLength',
@@ -260,7 +301,7 @@
                 search: {
                     return: true
                 }
-            })
+            });
 
             // AJAX submit untuk form tambah unit produk
             $('#modalTambah form').on('submit', function(e) {
