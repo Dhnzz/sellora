@@ -12,6 +12,7 @@ class Owner extends Model
         'user_id',
         'name',
         'phone',
+        'photo',
         'address',
     ];
 

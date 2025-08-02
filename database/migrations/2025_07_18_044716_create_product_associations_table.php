@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('product_associations', function (Blueprint $table) {
             $table->id();
-            $table->json('antecedent_product_ids');
+            $table->json('atecedent_product_ids');
             $table->json('consequent_product_ids');
             $table->decimal('support', 8, 6);
             $table->decimal('confidence', 8, 6);

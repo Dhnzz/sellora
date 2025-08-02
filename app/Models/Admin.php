@@ -16,6 +16,7 @@ class Admin extends Model
         'user_id',
         'name',
         'phone',
+        'photo',
         'address',
     ];
 

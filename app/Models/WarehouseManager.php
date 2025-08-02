@@ -15,6 +15,7 @@ class WarehouseManager extends Model
         'user_id',
         'name',
         'phone',
+        'photo',
         'address',
     ];
 

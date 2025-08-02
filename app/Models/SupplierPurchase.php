@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupplierPurchase extends Model
 {
@@ -26,5 +27,10 @@ class SupplierPurchase extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function supplier_purchase_item(): HasMany
+    {
+        return $this->hasMany(SupplierPurchaseItem::class);
     }
 }

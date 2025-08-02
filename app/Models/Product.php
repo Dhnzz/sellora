@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Stock;
 use App\Models\ProductUnit;
 use App\Models\ProductBrand;
+use App\Models\UnitConvertion;
 use App\Models\StockAdjustment;
 use App\Models\ProductBundleItem;
 use App\Models\ProductReturnItem;
@@ -12,6 +13,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\SalesTransactionItem;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\IncomingSupplyTransactionItem;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,8 +23,8 @@ class Product extends Model
         'product_brand_id',
         'name',
         'minimum_selling_unit_id',
-        'convertion_factors',
         'selling_price',
+        'image'
     ];
 
     public function product_brand(): BelongsTo
@@ -33,6 +35,12 @@ class Product extends Model
     public function product_unit(): BelongsTo
     {
         return $this->belongsTo(ProductUnit::class, 'minimum_selling_unit_id');
+    }
+
+    public function unit_convertions()
+    {
+        // Satu produk bisa memiliki banyak aturan konversi
+        return $this->hasMany(UnitConvertion::class);
     }
 
     public function stock(): HasOne

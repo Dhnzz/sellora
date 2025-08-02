@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->timestamp('closed_at')->useCurrent();
             $table->foreignId('admin_id')->constrained()->cascadeOnDelete();
             $table->unique(['closing_month', 'closing_year'], 'uniq_month_year');
+            $table->timestamps();
             $table->softDeletes();
         });
     }

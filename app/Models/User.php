@@ -8,6 +8,7 @@ use App\Models\Owner;
 use App\Models\Customer;
 use App\Models\SalesAgent;
 use App\Models\WarehouseManager;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -17,7 +18,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -62,12 +63,12 @@ class User extends Authenticatable
         return $this->hasOne(Admin::class, 'user_id');
     }
 
-    public function sales_agent(): HasOne
+    public function sales(): HasOne
     {
         return $this->hasOne(SalesAgent::class, 'user_id');
     }
 
-    public function warehouse_manager(): HasOne
+    public function warehouse(): HasOne
     {
         return $this->hasOne(WarehouseManager::class, 'user_id');
     }

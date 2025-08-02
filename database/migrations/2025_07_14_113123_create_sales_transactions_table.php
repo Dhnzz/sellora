@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->decimal('final_total_amount', 15, 4)->check('final_total_amount >= 0');
             $table->text('note');
             $table->enum('transaction_status', ['process', 'success'])->default('process');
-            $table->timestamp('delivery_confirmed_at');
+            $table->timestamp('delivery_confirmed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

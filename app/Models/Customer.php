@@ -13,20 +13,15 @@ class Customer extends Model
 {
     protected $fillable = [
         'user_id',
-        'sales_agent_id',
         'name',
         'phone',
+        'photo',
         'address',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function sales_agent(): BelongsTo
-    {
-        return $this->belongsTo(SalesAgent::class, 'sales_agent_id');
     }
 
     public function purchase_orders(): HasMany

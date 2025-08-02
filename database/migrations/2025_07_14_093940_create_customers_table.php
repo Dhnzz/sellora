@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sales_agent_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('phone');
+            $table->string('photo');
             $table->text('address');
             $table->timestamps();
             $table->softDeletes();
