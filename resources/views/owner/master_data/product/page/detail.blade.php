@@ -104,7 +104,7 @@
                                         <tr>
                                             <th class="text-center">No.</th>
                                             <th class="text-center">Nama Unit</th>
-                                            <th class="text-center">Jumlah Unit Ke MSU</th>
+                                            <th class="text-center">Jumlah MSU</th>
                                             <th class="text-center">Opsi</th>
                                         </tr>
                                     </thead>
@@ -144,27 +144,26 @@
                 <form action="{{ route('owner.master_data.product.unit_convertion.store') }}" method="POST">
                     @csrf
                     <div class="modal-body">
+                        {{-- Container untuk menampilkan pesan error --}}
+                        <div id="errorContainer" class="alert alert-danger d-none">
+                            <ul id="errorList" style="list-style-type: circle" class="px-3"></ul>
+                        </div>
+
                         <div class="row justify-content-center align-items-center g-2">
                             <div class="col">
-                                <label for="" class="control-label mb-2">Dari Unit :</label>
-                                <select type="text" class="form-control @error('from_unit') is-invalid @enderror"
-                                    name="from_unit">
+                                <label for="from_unit" class="control-label mb-2">Dari Unit :</label>
+                                <select class="form-control" name="from_unit" id="from_unit">
                                     <option value="">Pilih Unit</option>
                                     @foreach ($data['unit_to_convert'] as $item)
                                         <option value="{{ $item->id }}">{{ $item->name }}</option>
                                     @endforeach
                                 </select>
-                                @error('from_unit')
-                                    <small class="invalid-feedback">
-                                        {{ $message }}
-                                    </small>
-                                @enderror
                             </div>
                             <div class="col text-center mt-auto mb-1" style="max-width: fit-content">
                                 <i class="ti ti-arrow-right" style="font-size: 1.5rem"></i>
                             </div>
                             <div class="col">
-                                <label for="" class="control-label mb-2">Ke Unit :</label>
+                                <label for="to_unit" class="control-label mb-2">Ke Unit :</label>
                                 <input type="text" class="form-control" value="{{ $product->product_unit->name }}"
                                     disabled name="to_unit">
                             </div>
@@ -172,26 +171,18 @@
                                 <i class="ti ti-equal" style="font-size: 1.5rem"></i>
                             </div>
                             <div class="col">
-                                <label for="" class="control-label mb-2">Jumlah konversi :</label>
-                                <input type="number"
-                                    class="form-control @error('convertion_factor') is-invalid @enderror"
-                                    name="convertion_factor" min="0" oninput="this.value = Math.abs(this.value)">
-                                @error('convertion_factor')
-                                    <small class="invalid-feedback">
-                                        {{ $message }}
-                                    </small>
-                                @enderror
-
+                                <label for="convertion_factor" class="control-label mb-2">Jumlah konversi :</label>
+                                <input type="number" class="form-control" name="convertion_factor" min="0"
+                                    oninput="this.value = Math.abs(this.value)">
                             </div>
                         </div>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
                         <button type="Submit" class="btn btn-primary" id="btn-save">
                             <span class="spinner-border spinner-border-sm d-none" role="status"
                                 aria-hidden="true"></span>
-                            <span class="btn-text">Simpan</span>
+                            <span class="btn-text">Ubah</span>
                         </button>
                     </div>
                 </form>
@@ -204,28 +195,52 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modalEditLabel">Edit Unit Produk</h1>
+                    <h1 class="modal-title fs-5" id="modalEditLabel">Edit Konversi Unit</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="" method="POST" enctype="multipart/form-data">
+                <form action="" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="modal-body">
-                        <label for="" class="control-label mb-2">Nama unit produk :</label>
-                        <input type="text" value="" class="form-control @error('name') is-invalid @enderror"
-                            name="name" id="name">
-                        @error('name')
-                            <small class="invalid-feedback">
-                                {{ $message }}
-                            </small>
-                        @enderror
+                        {{-- Container untuk menampilkan pesan error --}}
+                        <div id="errorContainer" class="alert alert-danger d-none">
+                            <ul id="errorList" style="list-style-type: circle" class="px-3"></ul>
+                        </div>
+
+                        <div class="row justify-content-center align-items-center g-2">
+                            <div class="col">
+                                <label for="from_unit" class="control-label mb-2">Dari Unit :</label>
+                                <select class="form-control" name="from_unit" id="from_unit">
+                                    <option value="">Pilih Unit</option>
+                                    @foreach ($data['unit_to_convert'] as $item)
+                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col text-center mt-auto mb-1" style="max-width: fit-content">
+                                <i class="ti ti-arrow-right" style="font-size: 1.5rem"></i>
+                            </div>
+                            <div class="col">
+                                <label for="to_unit" class="control-label mb-2">Ke Unit :</label>
+                                <input type="text" class="form-control" value="{{ $product->product_unit->name }}"
+                                    disabled name="to_unit">
+                            </div>
+                            <div class="col text-center mt-auto mb-1" style="max-width: fit-content">
+                                <i class="ti ti-equal" style="font-size: 1.5rem"></i>
+                            </div>
+                            <div class="col">
+                                <label for="convertion_factor" class="control-label mb-2">Jumlah konversi :</label>
+                                <input type="number" class="form-control" name="convertion_factor" min="0"
+                                    oninput="this.value = Math.abs(this.value)">
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
                         <button type="Submit" class="btn btn-primary" id="btn-save">
                             <span class="spinner-border spinner-border-sm d-none" role="status"
                                 aria-hidden="true"></span>
-                            <span class="btn-text">Ubah</span>
+                            <span class="btn-text">Simpan</span>
                         </button>
                     </div>
                 </form>
@@ -243,7 +258,7 @@
                 ajax: {
                     url: "{{ route('owner.master_data.product.unit_convertion.data') }}", // Endpoint API untuk DataTables
                     type: 'GET',
-                    data: function(d){
+                    data: function(d) {
                         d.productId = {{ $product->id }}
                     }
                     // Anda bisa menambahkan data tambahan ke request di sini jika diperlukan
@@ -310,7 +325,6 @@
                 var url = form.attr('action');
                 var formData = new FormData(this);
 
-
                 // Tambahkan product_id dan minimum_selling_unit_id ke FormData
                 formData.append('product_id', '{{ $product->id }}');
                 formData.append('minimum_selling_unit_id', '{{ $product->minimum_selling_unit_id }}');
@@ -321,6 +335,13 @@
                 // Reset error
                 form.find('.is-invalid').removeClass('is-invalid');
                 form.find('.invalid-feedback').remove();
+
+                // --- PERBAIKAN DI SINI: Reset container error ---
+                var errorContainer = $('#modalTambah #errorContainer');
+                var errorList = $('#modalTambah #errorList');
+                errorContainer.addClass('d-none');
+                errorList.empty();
+
                 // Set loading state
                 btn.prop('disabled', true);
                 spinner.removeClass('d-none');
@@ -356,12 +377,12 @@
                         spinner.addClass('d-none');
                         btnText.text('Simpan');
                         if (xhr.status === 422) {
+                            // --- PERBAIKAN DI SINI: Tampilkan error di container ---
                             var errors = xhr.responseJSON.errors;
+                            errorContainer.removeClass('d-none'); // Tampilkan container error
                             $.each(errors, function(key, val) {
-                                var input = form.find('[name="' + key + '"]');
-                                input.addClass('is-invalid');
-                                input.after('<small class="invalid-feedback">' + val[
-                                    0] + '</small>');
+                                errorList.append('<li>' + val[0] +
+                                    '</li>'); // Tambahkan setiap error ke list
                             });
                         } else {
                             toastr.error('Terjadi kesalahan saat menyimpan data.');
@@ -369,6 +390,145 @@
                     }
                 });
             });
+
+            $(document).on('click', '.edit-btn', function(e) {
+                var id = $(this).data('id');
+                var editUrl = "{{ route('owner.master_data.product.unit_convertion.edit', ':id') }}";
+                editUrl = editUrl.replace(':id', id);
+                // Reset form
+                var form = $('#modalEdit form');
+                form[0].reset();
+                form.find('.is-invalid').removeClass('is-invalid');
+                form.find('.invalid-feedback').remove();
+
+                // Set action form update
+                var updateUrl = "{{ route('owner.master_data.product.unit_convertion.update', ':id') }}/";
+                updateUrl = updateUrl.replace(':id', id);
+                form.attr('action', updateUrl);
+                // Ambil data
+                $.ajax({
+                    url: editUrl,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.unit_convertion) {
+                            form.find('[name="from_unit"] option').each(function() {
+                                if ($(this).val() == response.unit_convertion
+                                    .from_unit_id) {
+                                    $(this).prop('selected', true);
+                                } else {
+                                    $(this).prop('selected', false);
+                                }
+                            });
+                            form.find('[name="convertion_factor"]').val(response.unit_convertion
+                                .convertion_factor);
+                            $('#modalEdit').modal('show');
+                        } else if (response.error) {
+                            toastr.error(response.error);
+                            $('#modalEdit').modal('hide');
+                        }
+                    },
+                    error: function() {
+                        toastr.error('Gagal mengambil data unit produk.');
+                        $('#modalEdit').modal('hide');
+                    }
+                });
+            });
+
+            // AJAX submit untuk form edit unit produk
+            $('#modalEdit form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var url = form.attr('action');
+                var formData = new FormData(this);
+                var btn = form.find('#btn-save');
+                var btnText = btn.find('.btn-text');
+                var spinner = btn.find('.spinner-border');
+                // Reset error
+                form.find('.is-invalid').removeClass('is-invalid');
+                form.find('.invalid-feedback').remove();
+
+                // --- PERBAIKAN DI SINI: Reset container error ---
+                var errorContainer = $('#modalEdit #errorContainer');
+                var errorList = $('#modalEdit #errorList');
+                errorContainer.addClass('d-none');
+                errorList.empty();
+
+                // Set loading state
+                btn.prop('disabled', true);
+                spinner.removeClass('d-none');
+                btnText.text('Menyimpan...');
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Reset loading state
+                        btn.prop('disabled', false);
+                        spinner.addClass('d-none');
+                        btnText.text('Ubah');
+                        if (response.success) {
+                            toastr.success(response.success);
+                            $('#modalEdit').modal('hide');
+                            form[0].reset();
+                            dataTable.ajax.reload(null, false);
+                        } else if (response.error) {
+                            toastr.error(response.error);
+                        }
+                    },
+                    error: function(xhr) {
+                        // Reset loading state
+                        btn.prop('disabled', false);
+                        spinner.addClass('d-none');
+                        btnText.text('Ubah');
+                        if (xhr.status === 422) {
+                            // --- PERBAIKAN DI SINI: Tampilkan error di container ---
+                            var errors = xhr.responseJSON.errors;
+                            errorContainer.removeClass('d-none'); // Tampilkan container error
+                            $.each(errors, function(key, val) {
+                                errorList.append('<li>' + val[0] +
+                                    '</li>'); // Tambahkan setiap error ke list
+                            });
+                        } else {
+                            toastr.error('Terjadi kesalahan saat mengupdate data.');
+                        }
+                    }
+                });
+            });
+
+            $(document).on('click', '.delete-btn', function(e) {
+                e.preventDefault();
+
+                var unitConvertionId = $(this).data('id');
+                var deleteUrl = "{{ route('owner.master_data.product.unit_convertion.destroy', ':id') }}";
+                deleteUrl = deleteUrl.replace(':id', unitConvertionId);
+
+                if (confirm(
+                        'Apakah Anda yakin ingin menghapus konversi ini? Tindakan ini tidak dapat dibatalkan!'
+                    )) {
+                    $.ajax({
+                        url: deleteUrl,
+                        type: 'DELETE', // Menggunakan metode HTTP DELETE
+                        data: {
+                            _token: "{{ csrf_token() }}" // Kirim CSRF token untuk keamanan Laravel
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                toastr.success(response.success);
+                                dataTable.ajax.reload(null,
+                                    false); // Reload DataTables tanpa reset posisi halaman
+                            } else if (response.error) {
+                                toastr.error(response.error);
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error('AJAX Error:', xhr.responseText);
+                            toastr.error('Terjadi kesalahan saat menghapus konversi.');
+                        }
+                    });
+                }
+            })
         })
     </script>
 @endpush

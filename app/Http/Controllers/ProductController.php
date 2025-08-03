@@ -91,8 +91,7 @@ class ProductController
 
     public function getById(Product $product)
     {
-        $existingConversionUnitIds = UnitConvertion::where('product_id', $product->id)->pluck('from_unit_id');
-        $unit_to_convert = ProductUnit::where('id', '!=', $product->minimum_selling_unit_id)->whereNotIn('id', $existingConversionUnitIds)->get();
+        $unit_to_convert = ProductUnit::where('id', '!=', $product->minimum_selling_unit_id)->get();
         $data = [
             'title' => 'Manajemen Produk',
             'role' => Auth::user()->getRoleNames()->first(),

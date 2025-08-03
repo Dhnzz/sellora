@@ -184,6 +184,9 @@ Route::middleware(['auth'])->group(function () {
                                 ->group(function () {
                                     Route::get('/data', [UnitConvertionController::class, 'getAll'])->name('data');
                                     Route::post('/', [UnitConvertionController::class, 'store'])->name('store');
+                                    Route::get('/edit/{unit_convertion}', [UnitConvertionController::class, 'edit'])->name('edit');
+                                    Route::put('/update/{unit_convertion}', [UnitConvertionController::class, 'update'])->name('update');
+                                    Route::delete('/delete/{unit_convertion}', [UnitConvertionController::class, 'destroy'])->name('destroy');
                                 });
                         });
                 });
