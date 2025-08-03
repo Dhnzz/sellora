@@ -23,8 +23,8 @@
     <div class="card">
         <div class="card-body">
             <div class="d-flex justify-content-end align-items-start g-2 w-full">
-                <a href="{{ route('owner.user_management.admin.create') }}" class="btn btn-sm btn-success">
-                    <i class="ti ti-plus"></i> &nbsp; Tambah admin
+                <a href="{{ route('owner.master_data.product.create') }}" class="btn btn-sm btn-success">
+                    <i class="ti ti-plus"></i> &nbsp; Tambah produk
                 </a>
             </div>
 

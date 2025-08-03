@@ -118,8 +118,8 @@ class UnitConvertionController
                 'from_unit' => [
                     'required',
                     Rule::unique('unit_convertions', 'from_unit_id')
-                        ->where(function ($query) use ($request) {
-                            return $query->where('product_id', $request->product_id);
+                        ->where(function ($query) use ($unit_convertion) {
+                            return $query->where('product_id', $unit_convertion->product_id);
                         })
                         ->ignore($unit_convertion->id), // <-- Tambahkan ini,
                 ],

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Stock;
 use App\Models\Product;
 use App\Models\ProductUnit;
+use App\Models\ProductBrand;
 use Illuminate\Http\Request;
 use App\Models\UnitConvertion;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
 
 class ProductController
@@ -118,27 +121,28 @@ class ProductController
 
     public function create()
     {
-        $admins = Admin::all();
         $data = [
-            'title' => 'Manajemen Admin',
+            'title' => 'Manajemen Produk',
             'role' => Auth::user()->getRoleNames()->first(),
-            'active' => 'master_data_admin',
+            'active' => 'master_data_product',
             'breadcrumbs' => [
                 [
                     'name' => 'Manajemen User',
                     'link' => '#',
                 ],
                 [
-                    'name' => 'Admin',
-                    'link' => route('owner.master_data.admin.index'),
+                    'name' => 'Produk',
+                    'link' => route('owner.master_data.product.index'),
                 ],
                 [
-                    'name' => 'Tambah Admin',
-                    'link' => route('owner.master_data.admin.create'),
+                    'name' => 'Tambah Produk',
+                    'link' => route('owner.master_data.product.create'),
                 ],
             ],
+            'product_brands' => ProductBrand::all(),
+            'product_units' => ProductUnit::all()
         ];
-        return view('owner.master_data.admin.page.create', compact('data'));
+        return view('owner.master_data.product.page.create', compact('data'));
     }
 
     public function edit(Admin $admin)
@@ -165,23 +169,6 @@ class ProductController
         return view('owner.master_data.admin.page.edit', compact('data', 'admin'));
     }
 
-    public function resetPassword(Admin $admin, Request $request)
-    {
-        if ($request->ajax()) {
-            try {
-                $userAdmin = $admin->user;
-                $userAdmin->update([
-                    'password' => Hash::make('admin123'),
-                ]);
-                return response()->json(['success' => 'Password ' . $admin->name . ' berhasil direset']);
-            } catch (\Exception $e) {
-                // Log error untuk debugging
-                \Log::error('Gagal mereset password admin: ' . $e->getMessage(), ['admin_id' => $admin->id]);
-                return response()->json(['error' => 'Gagal mereset password admin. ' . $e->getMessage()], 500);
-            }
-        }
-    }
-
     public function deletePhoto(Admin $admin, Request $request)
     {
         if ($request->ajax()) {
@@ -206,57 +193,52 @@ class ProductController
     {
         $request->validate(
             [
-                'email' => 'required|email|unique:users,email',
                 'name' => 'required',
-                'phone' => 'required|min:12',
-                'address' => 'required',
-                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'product_brand' => 'required',
+                'product_unit' => 'required',
+                'selling_price' => 'required|numeric',
+                'stock' => 'nullable',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
-                'email.required' => 'Email wajib diisi.',
-                'email.email' => 'Format email tidak valid.',
-                'email.unique' => 'Email sudah terdaftar.',
-                'name.required' => 'Nama wajib diisi.',
-                'phone.required' => 'Nomor telepon wajib diisi.',
-                'phone.min' => 'Nomor telepon minimal 12 digit.',
-                'address.required' => 'Alamat wajib diisi.',
-                'photo.image' => 'File foto harus berupa gambar.',
-                'photo.mimes' => 'Foto harus berformat jpeg, png, jpg, atau gif.',
-                'photo.max' => 'Ukuran foto maksimal 2MB.',
+                'name.required' => 'Nama produk wajib diisi.',
+                'product_brand.required' => 'Brand produk wajib diisi.',
+                'product_unit.required' => 'MSU wajib diisi.',
+                'selling_price.required' => 'Harga jual wajib diisi.',
+                'image.image' => 'File gambar harus berupa gambar.',
+                'image.mimes' => 'Gambar harus berformat jpeg, png, jpg, atau gif.',
+                'image.max' => 'Ukuran gambar maksimal 2MB.',
             ],
         );
 
         // Cek apakah ada file foto yang diupload
-        $photoPath = 'uploads/images/users/user-1.jpg';
-        if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
+        $imagePath = 'uploads/images/products/product-1.png';
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $photoPath = Storage::disk('public')->putFileAs('uploads/images/users', $file, $filename);
+            $imagePath = Storage::disk('public')->putFileAs('uploads/images/products', $file, $filename);
         }
 
-        $password = 'admin123';
-        if ($request->password != null) {
-            $password = $request->password;
-        }
-        $userAdmin = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($password),
-        ]);
-        $userAdmin->assignRole('admin');
-
-        $admin = Admin::create([
-            'user_id' => $userAdmin->id,
+        $product = Product::create([
             'name' => $request->name,
-            'phone' => $request->phone,
-            'photo' => $photoPath,
-            'address' => $request->address,
+            'product_brand_id' => $request->product_brand,
+            'minimum_selling_unit_id' => $request->product_unit,
+            'selling_price' => $request->selling_price,
+            'image' => $imagePath
         ]);
 
-        if (!$admin) {
-            return redirect()->route('owner.master_data.admin.index')->with('error', 'Admin gagal ditambahkan');
+        if ($request->stock != null) {
+            Stock::create([
+                'product_id' => $product->id,
+                'quantity' => $request->stock
+            ]);
         }
 
-        return redirect()->route('owner.master_data.admin.index')->with('success', 'Admin berhasil ditambahkan');
+        if (!$product) {
+            return redirect()->route('owner.master_data.product.index')->with('error', 'Produk gagal ditambahkan');
+        }
+
+        return redirect()->route('owner.master_data.product.index')->with('success', 'Produk berhasil ditambahkan');
     }
 
     public function update(Request $request, Admin $admin)

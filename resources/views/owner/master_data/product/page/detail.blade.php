@@ -155,7 +155,7 @@
                                 <select class="form-control" name="from_unit" id="from_unit">
                                     <option value="">Pilih Unit</option>
                                     @foreach ($data['unit_to_convert'] as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                        <option value="{{ $item->id }}">{{ ucfirst($item->name) }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -213,7 +213,7 @@
                                 <select class="form-control" name="from_unit" id="from_unit">
                                     <option value="">Pilih Unit</option>
                                     @foreach ($data['unit_to_convert'] as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                        <option value="{{ $item->id }}">{{ ucfirst($item->name) }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -446,6 +446,11 @@
                 // Reset error
                 form.find('.is-invalid').removeClass('is-invalid');
                 form.find('.invalid-feedback').remove();
+
+                // Log data form ke console (untuk debugging)
+                for (var pair of formData.entries()) {
+                    console.log(pair[0]+ ': ' + pair[1]);
+                }
 
                 // --- PERBAIKAN DI SINI: Reset container error ---
                 var errorContainer = $('#modalEdit #errorContainer');
