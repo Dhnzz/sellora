@@ -31,17 +31,18 @@ class ProductRelatedSeeder extends Seeder
         //     $productUnits = ProductUnit::all();
         // }
         
-        // Product (buat 5 produk jika belum ada sama sekali)
-        for ($i = 1; $i <= 5; $i++) {
+        // Product (buat 20 produk dengan format: Produk 1 (Brand Name), Produk 2 (Brand Name), dst)
+        for ($i = 1; $i <= 20; $i++) {
+            $brand = $productBrands->random();
             $product = Product::create([
-                'product_brand_id' => $productBrands->random()->id,
-                'name' => 'Produk ' . $i . ' ' . $faker->randomElement(['Basic', 'Pro', 'Max', 'Mini']),
+                'product_brand_id' => $brand->id,
+                'name' => 'Produk ' . $i . ' (' . $brand->name . ')',
                 'minimum_selling_unit_id' => $productUnits->id,
-                'selling_price' => $faker->numberBetween(10000, 500000), // Harga acak
+                'selling_price' => round($faker->numberBetween(10000, 500000), -2), // Harga acak dibulatkan ke ratusan
                 'image' => 'uploads/images/products/product-1.png', 
             ]);
             
-            // Stock (random quantity for each product)
+            // Stock (kuantitas stok acak untuk setiap produk)
             Stock::create([
                 'product_id' => $product->id,
                 'quantity' => rand(50, 500), // Kuantitas stok acak
@@ -63,6 +64,7 @@ class ProductRelatedSeeder extends Seeder
 
             $bundle = ProductBundle::create([
                 'bundle_name' => 'Bundle ' . $i,
+                'flyer' => 'uploads/images/product_bundles/bundle-1.png',
                 'description' => $faker->paragraph(),
                 'start_date' => $faker->dateTimeBetween('-6 months', 'now'),
                 'end_date' => $faker->dateTimeBetween('now', '+6 months'),

@@ -18,8 +18,10 @@ return new class extends Migration {
             $table->enum('status', ['pending', 'confirmed'])->default('pending');
             $table->foreignId('admin_id')->constrained()->cascadeOnDelete();
             $table->timestamp('confirmed_at')->nullable();
+            $table->integer('total_amount');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['sales_transaction_id', 'return_date', 'total_amount'], 'dr_st_retdate_total_idx');
         });
     }
 

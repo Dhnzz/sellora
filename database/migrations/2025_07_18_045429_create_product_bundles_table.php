@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('product_bundles', function (Blueprint $table) {
             $table->id();
             $table->string('bundle_name');
+            $table->text('flyer');
             $table->text('description');
             $table->date('start_date');
             $table->date('end_date');

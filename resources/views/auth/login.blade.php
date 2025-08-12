@@ -41,7 +41,7 @@
                                 </a>
                                 <div class="position-relative text-center my-4">
                                     <p class="mb-0 fs-4 px-3 d-inline-block bg-white text-dark z-index-5 position-relative">
-                                        Sign In</p>
+                                        Masuk</p>
                                     <span
                                         class="border-top w-100 position-absolute top-50 start-50 translate-middle"></span>
                                     @if (session('message'))
@@ -60,7 +60,7 @@
                                                 is-invalid
                                             @enderror"
                                             id="exampleInputEmail1" aria-describedby="emailHelp"
-                                            placeholder="example@email.com">
+                                            placeholder="example@email.com" value="{{ old('email') }}">
                                         @error('email')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
@@ -75,7 +75,7 @@
                                                 @error('password')
                                                     is-invalid
                                                 @enderror"
-                                                    id="exampleInputPassword1" placeholder="Enter password">
+                                                    id="exampleInputPassword1" placeholder="Masukkan password">
                                                 <span class="shbtn">
                                                     <i class="ti ti-eye-off"></i>
                                                 </span>
@@ -85,8 +85,9 @@
                                             @enderror
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-dark w-100 py-8 rounded-2">Sign In</button>
+                                    <button type="submit" class="btn btn-dark w-100 py-8 mb-2 rounded-2">Masuk</button>
                                 </form>
+                                <a class="mt-2 text-center" style="width: 100%" href="{{ route('register') }}">Belum punya akun?</a>
                             </div>
                         </div>
                     </div>

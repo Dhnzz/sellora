@@ -86,7 +86,7 @@ class WarehouseManagerController
     public function getById(WarehouseManager $warehouseManager)
     {
         $data = [
-            'title' => 'Manajemen Manajer Warehouse',
+            'title' => 'Detail Manajer Warehouse',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_warehouse_manager',
             'breadcrumbs' => [
@@ -111,7 +111,7 @@ class WarehouseManagerController
     public function create()
     {
         $data = [
-            'title' => 'Manajemen Manajer Warehouse',
+            'title' => 'Tambah Manajer Warehouse',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_warehouse_manager',
             'breadcrumbs' => [
@@ -135,7 +135,7 @@ class WarehouseManagerController
     public function edit(WarehouseManager $warehouseManager, Request $request)
     {
         $data = [
-            'title' => 'Manajemen Manajer Warehouse',
+            'title' => 'Edit Manajer Warehouse',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_warehouse_manager',
             'breadcrumbs' => [

@@ -22,7 +22,7 @@ class ProductController
             'active' => 'master_data_product',
             'breadcrumbs' => [
                 [
-                    'name' => 'Manajemen User',
+                    'name' => 'Master Data',
                     'link' => '#',
                 ],
                 [
@@ -63,10 +63,10 @@ class ProductController
                     if ($request->has('search') && !empty($request->input('search')['value'])) {
                         $searchValue = $request->input('search')['value'];
                         $query
-                            ->where('product_name', 'like', "%{$searchValue}%")
-                            ->orWhere('selling_price', 'like', "%{$searchValue}%")
-                            ->orWhere('msu_name', 'like', "%{$searchValue}%")
-                            ->orWhere('quantity', 'like', "%{$searchValue}%");
+                            ->where('products.name', 'like', "%{$searchValue}%")
+                            ->orWhere('products.selling_price', 'like', "%{$searchValue}%")
+                            ->orWhere('product_units.name', 'like', "%{$searchValue}%")
+                            ->orWhere('stocks.quantity', 'like', "%{$searchValue}%");
                     }
                 })
                 ->order(function ($query) use ($request) {
@@ -96,12 +96,12 @@ class ProductController
     {
         $unit_to_convert = ProductUnit::where('id', '!=', $product->minimum_selling_unit_id)->get();
         $data = [
-            'title' => 'Manajemen Produk',
+            'title' => 'Detail Produk',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'master_data_product',
             'breadcrumbs' => [
                 [
-                    'name' => 'Manajemen User',
+                    'name' => 'Master Data',
                     'link' => '#',
                 ],
                 [
@@ -122,12 +122,12 @@ class ProductController
     public function create()
     {
         $data = [
-            'title' => 'Manajemen Produk',
+            'title' => 'Tambah Produk',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'master_data_product',
             'breadcrumbs' => [
                 [
-                    'name' => 'Manajemen User',
+                    'name' => 'Master Data',
                     'link' => '#',
                 ],
                 [
@@ -140,51 +140,53 @@ class ProductController
                 ],
             ],
             'product_brands' => ProductBrand::all(),
-            'product_units' => ProductUnit::all()
+            'product_units' => ProductUnit::all(),
         ];
         return view('owner.master_data.product.page.create', compact('data'));
     }
 
-    public function edit(Admin $admin)
+    public function edit(Product $product)
     {
         $data = [
-            'title' => 'Manajemen Admin',
+            'title' => 'Edit Produk',
             'role' => Auth::user()->getRoleNames()->first(),
-            'active' => 'master_data_admin',
+            'active' => 'master_data_product',
             'breadcrumbs' => [
                 [
-                    'name' => 'Manajemen User',
+                    'name' => 'Master Data',
                     'link' => '#',
                 ],
                 [
-                    'name' => 'Admin',
-                    'link' => route('owner.master_data.admin.index'),
+                    'name' => 'Produk',
+                    'link' => route('owner.master_data.product.index'),
                 ],
                 [
-                    'name' => 'Edit Admin',
-                    'link' => route('owner.master_data.admin.edit', $admin->id),
+                    'name' => 'Edit Produk',
+                    'link' => route('owner.master_data.product.edit', $product->id),
                 ],
             ],
+            'product_brands' => ProductBrand::all(),
+            'product_units' => ProductUnit::all(),
         ];
-        return view('owner.master_data.admin.page.edit', compact('data', 'admin'));
+        return view('owner.master_data.product.page.edit', compact('data', 'product'));
     }
 
-    public function deletePhoto(Admin $admin, Request $request)
+    public function deleteImage(Product $product, Request $request)
     {
         if ($request->ajax()) {
             try {
-                if ($admin->photo && Storage::disk('public')->exists($admin->photo)) {
-                    Storage::disk('public')->delete($admin->photo);
-                    $photoPath = 'uploads/images/users/user-1.jpg';
-                    $admin->update([
-                        'photo' => $photoPath,
+                if ($product->image && Storage::disk('public')->exists($product->image)) {
+                    Storage::disk('public')->delete($product->image);
+                    $imagePath = 'uploads/images/products/product-1.png';
+                    $product->update([
+                        'image' => $imagePath,
                     ]);
-                    return response()->json(['success' => 'Berhasil menghapus foto ' . $admin->name, 'photo' => $photoPath]);
+                    return response()->json(['success' => 'Berhasil menghapus gambar ' . $product->name, 'image' => $imagePath]);
                 }
             } catch (\Exception $e) {
                 // Log error untuk debugging
-                \Log::error('Gagal menghapus foto admin: ' . $e->getMessage(), ['admin_id' => $admin->id]);
-                return response()->json(['error' => 'Gagal menghapus foto admin. ' . $e->getMessage()], 500);
+                \Log::error('Gagal menghapus gambar produk: ' . $e->getMessage(), ['product_id' => $product->id]);
+                return response()->json(['error' => 'Gagal menghapus gambar produk. ' . $e->getMessage()], 500);
             }
         }
     }
@@ -197,7 +199,7 @@ class ProductController
                 'product_brand' => 'required',
                 'product_unit' => 'required',
                 'selling_price' => 'required|numeric',
-                'stock' => 'nullable',
+                'stock' => 'required',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
@@ -205,6 +207,7 @@ class ProductController
                 'product_brand.required' => 'Brand produk wajib diisi.',
                 'product_unit.required' => 'MSU wajib diisi.',
                 'selling_price.required' => 'Harga jual wajib diisi.',
+                'stock.required' => 'Stock wajib diisi.',
                 'image.image' => 'File gambar harus berupa gambar.',
                 'image.mimes' => 'Gambar harus berformat jpeg, png, jpg, atau gif.',
                 'image.max' => 'Ukuran gambar maksimal 2MB.',
@@ -224,13 +227,13 @@ class ProductController
             'product_brand_id' => $request->product_brand,
             'minimum_selling_unit_id' => $request->product_unit,
             'selling_price' => $request->selling_price,
-            'image' => $imagePath
+            'image' => $imagePath,
         ]);
 
         if ($request->stock != null) {
             Stock::create([
                 'product_id' => $product->id,
-                'quantity' => $request->stock
+                'quantity' => $request->stock,
             ]);
         }
 
@@ -241,88 +244,86 @@ class ProductController
         return redirect()->route('owner.master_data.product.index')->with('success', 'Produk berhasil ditambahkan');
     }
 
-    public function update(Request $request, Admin $admin)
+    public function update(Request $request, Product $product)
     {
         $request->validate(
             [
-                'email' => 'required|email|unique:users,email,' . $admin->user_id,
                 'name' => 'required',
-                'phone' => 'required|min:12',
-                'address' => 'required',
-                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'product_brand' => 'required',
+                'product_unit' => 'required',
+                'selling_price' => 'required|numeric',
+                'stock' => 'required',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ],
             [
-                'email.required' => 'Email wajib diisi.',
-                'email.email' => 'Format email tidak valid.',
-                'email.unique' => 'Email sudah terdaftar.',
-                'name.required' => 'Nama wajib diisi.',
-                'phone.required' => 'Nomor telepon wajib diisi.',
-                'phone.min' => 'Nomor telepon minimal 12 digit.',
-                'address.required' => 'Alamat wajib diisi.',
-                'photo.image' => 'File foto harus berupa gambar.',
-                'photo.mimes' => 'Foto harus berformat jpeg, png, jpg, atau gif.',
-                'photo.max' => 'Ukuran foto maksimal 2MB.',
+                'name.required' => 'Nama produk wajib diisi.',
+                'product_brand.required' => 'Brand produk wajib diisi.',
+                'product_unit.required' => 'MSU wajib diisi.',
+                'selling_price.required' => 'Harga jual wajib diisi.',
+                'stock.required' => 'Stock wajib diisi.',
+                'image.image' => 'File gambar harus berupa gambar.',
+                'image.mimes' => 'Gambar harus berformat jpeg, png, jpg, atau gif.',
+                'image.max' => 'Ukuran gambar maksimal 2MB.',
             ],
         );
 
         // Cek apakah ada file foto yang diupload
-        $photoPath = $admin->photo;
-        if ($request->hasFile('photo')) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
+        $imagePath = $product->image;
+        if ($request->hasFile('image')) {
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
             }
 
-            $file = $request->file('photo');
+            $file = $request->file('image');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $photoPath = Storage::disk('public')->putFileAs('uploads/images/users', $file, $filename);
+            $imagePath = Storage::disk('public')->putFileAs('uploads/images/products', $file, $filename);
         }
 
-        $admin->user->update([
-            'email' => $request->email,
+        $product->stock->update([
+            'quantity' => $request->stock,
         ]);
 
-        $admin->update([
+        $product->update([
             'name' => $request->name,
-            'phone' => $request->phone,
-            'photo' => $photoPath,
-            'address' => $request->address,
+            'product_brand_id' => $request->product_brand,
+            'minimum_selling_unit_id' => $request->product_unit,
+            'selling_price' => $request->selling_price,
+            'image' => $imagePath,
         ]);
 
-        if (!$admin) {
-            return redirect()->route('owner.master_data.admin.index')->with('error', 'Admin gagal diupdate');
+        if (!$product) {
+            return redirect()->route('owner.master_data.product.index')->with('error', 'Produk gagal diupdate');
         }
 
-        return redirect()->route('owner.master_data.admin.index')->with('success', 'Admin berhasil diupdate');
+        return redirect()->route('owner.master_data.product.index')->with('success', 'Produk berhasil diupdate');
     }
 
-    public function destroy(Request $request, Admin $admin)
+    public function destroy(Request $request, Product $product)
     {
-        if ($admin->photo != 'uploads/images/users/user-1.jpg') {
-            if ($admin->photo && Storage::disk('public')->exists($admin->photo)) {
-                Storage::disk('public')->delete(paths: $admin->photo);
+        if ($product->image != 'uploads/images/products/product-1.png') {
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete(paths: $product->image);
             } else {
                 // Opsional: Log peringatan jika path gambar ada di DB tapi file tidak ditemukan di storage
                 // Ini bisa terjadi jika file sudah dihapus secara manual atau ada inkonsistensi data
-                if ($admin->photo) {
-                    \Log::warning('File gambar tidak ditemukan di storage saat mencoba menghapus: ' . $admin->photo);
+                if ($product->image) {
+                    \Log::warning('File gambar tidak ditemukan di storage saat mencoba menghapus: ' . $product->image);
                 }
             }
         }
 
         if ($request->ajax()) {
             try {
-                $userAdmin = $admin->user;
-                $userAdmin->delete();
-                $admin->delete();
-                return response()->json(['success' => 'Admin berhasil dihapus!']);
+                $product->delete();
+                return response()->json(['success' => 'Produk berhasil dihapus!']);
             } catch (\Exception $e) {
                 // Log error untuk debugging
-                \Log::error('Gagal menghapus admin: ' . $e->getMessage(), ['admin_id' => $admin->id]);
-                return response()->json(['error' => 'Gagal menghapus admin. ' . $e->getMessage()], 500);
+                \Log::error('Gagal menghapus produk: ' . $e->getMessage(), ['product' => $product->id]);
+                return response()->json(['error' => 'Gagal menghapus produk. ' . $e->getMessage()], 500);
             }
         } else {
-            $admin->delete();
-            return redirect()->route('owner.master_data.admin.index')->with('success', 'Admin berhasil dihapus!');
+            $product->delete();
+            return redirect()->route('owner.master_data.product.index')->with('success', 'Produk berhasil dihapus!');
         }
     }
 }

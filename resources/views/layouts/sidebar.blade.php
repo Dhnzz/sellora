@@ -5,7 +5,7 @@
             <a href="{{ route('owner.dashboard') }}" class="text-nowrap">
                 <div class="d-flex align-items-center">
                     <img src="{{ asset('assets/front/img/favicon.png') }}" width="50">
-                    <h4 class="mb-0 px-2 fw-bolder">OWNER PANEL</h4>
+                    <h4 class="mb-0 px-2 fw-bolder">{{ strtoupper($data['role'] ?? '') }} PANEL</h4>
                 </div>
             </a>
             <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
@@ -29,6 +29,28 @@
                                     <i class="ti ti-layout-dashboard"></i>
                                 </span>
                                 <span class="hide-menu">Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-small-cap">
+                            <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                            <span class="hide-menu">Bundle</span>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('owner.bundle.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('owner.bundle.*') ? 'active' : '' }}">
+                                <i class="ti ti-cash fs-5 me-2"></i>
+                                <span class="hide-menu">Manajemen Bundle</span>
+                            </a>
+                        </li>
+                        <li class="nav-small-cap">
+                            <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                            <span class="hide-menu">Laporan</span>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('owner.report.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('owner.report.*') ? 'active' : '' }}">
+                                <i class="ti ti-cash fs-5 me-2"></i>
+                                <span class="hide-menu">Penjualan</span>
                             </a>
                         </li>
                         <li class="nav-small-cap">
@@ -74,6 +96,13 @@
                             <span class="hide-menu">Master Data</span>
                         </li>
                         <li class="sidebar-item">
+                            <a href="{{ route('owner.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('owner.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-truck-delivery fs-5 me-2"></i>
+                                <span class="hide-menu">Supplier</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
                             <a href="{{ route('owner.master_data.product_unit.index') }}"
                                 class="sidebar-link d-flex align-items-center {{ Request::routeIs('owner.master_data.product_unit.*') ? 'active' : '' }}">
                                 <i class="ti ti-ruler fs-5 me-2"></i>
@@ -102,7 +131,8 @@
                             <span class="hide-menu">Home</span>
                         </li>
                         <li class="sidebar-item">
-                            <a class="sidebar-link" href="" aria-expanded="false">
+                            <a class="sidebar-link {{ Route::currentRouteName() == $data['role'] . '.dashboard' ? 'active' : '' }}"
+                                href="{{ route($data['role'] . '.dashboard') }}" aria-expanded="false">
                                 <span>
                                     <i class="ti ti-layout-dashboard"></i>
                                 </span>
@@ -114,12 +144,74 @@
                             <span class="hide-menu">Master Data</span>
                         </li>
                         <li class="sidebar-item">
-                            <a class="sidebar-link @if ($active == 'category') active @endif" href="#"
-                                aria-expanded="false">
-                                <span>
-                                    <i class="ti ti-category-2"></i>
-                                </span>
-                                <span class="hide-menu">Category</span>
+                            <a href="{{ route('admin.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-truck-delivery fs-5 me-2"></i>
+                                <span class="hide-menu">Supplier</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.product_unit.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.product_unit.*') ? 'active' : '' }}">
+                                <i class="ti ti-ruler fs-5 me-2"></i>
+                                <span class="hide-menu">Unit Produk</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.product_brand.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.product_brand.*') ? 'active' : '' }}">
+                                <i class="ti ti-brand-apple fs-5 me-2"></i>
+                                <span class="hide-menu">Brand Produk</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.product.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.product.*') ? 'active' : '' }}">
+                                <i class="ti ti-package fs-5 me-2"></i>
+                                <span class="hide-menu">Produk</span>
+                            </a>
+                        </li>
+                        <li class="nav-small-cap">
+                            <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                            <span class="hide-menu">Transaksi</span>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-clipboard-list fs-5 me-2"></i>
+                                <span class="hide-menu">Pesanan</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-shopping-cart fs-5 me-2"></i>
+                                <span class="hide-menu">Pembelian Supply</span>
+                            </a>
+                        </li>
+                        <li class="nav-small-cap">
+                            <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                            <span class="hide-menu">Pengiriman</span>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-truck fs-5 me-2"></i>
+                                <span class="hide-menu">Konfirmasi Pengantaran</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-rotate fs-5 me-2"></i>
+                                <span class="hide-menu">Return Pengantaran</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('admin.master_data.supplier.index') }}"
+                                class="sidebar-link d-flex align-items-center {{ Request::routeIs('admin.master_data.supplier.*') ? 'active' : '' }}">
+                                <i class="ti ti-cash-banknote fs-5 me-2"></i>
+                                <span class="hide-menu">Tutup Buku</span>
                             </a>
                         </li>
                     @break

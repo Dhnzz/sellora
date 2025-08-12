@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -35,4 +34,9 @@ return [
         ],
     ],
 
+    'recsys' => [
+        'fp_growth_url' => env('FP_GROWTH_API_URL', 'http://127.0.0.1:8003'),
+        'fp_growth_py' => env('FP_GROWTH_PY_PATH', base_path('fp_growth_runner.py')),
+        'python_bin' => env('PYTHON_BIN', 'python'),
+    ],
 ];

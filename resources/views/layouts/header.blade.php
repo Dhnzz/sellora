@@ -25,8 +25,13 @@
                             @php
                                 $role = $data['role'];
                             @endphp
-                            <img src="{{ asset(Auth::user()->$role->photo) }}" alt="" width="35"
-                                height="35" class="rounded-circle">
+                            @if (Auth::user()->$role->photo == 'uploads/images/users/user-1.jpg')
+                                <img src="{{ asset(Auth::user()->$role->photo) }}" alt="" width="35"
+                                    height="35" class="rounded-circle">
+                            @else
+                                <img src="{{ asset('storage/'.Auth::user()->$role->photo) }}" alt="" width="35"
+                                    height="35" class="rounded-circle">
+                            @endif
                             <div class="ms-2">
                                 <span class="fw-bold fs-3 p-0">
                                     {{ Auth::user()->$role->name }}
@@ -36,7 +41,7 @@
                     </a>
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
                         <div class="message-body overflow-hidden">
-                            <a href="#" class="d-flex align-items-center gap-2 dropdown-item">
+                            <a href="{{ route($data['role'].'.profile', Auth::user()->$role->id) }}" class="d-flex align-items-center gap-2 dropdown-item">
                                 <i class="ti ti-user-cog fs-6"></i>
                                 <p class="mb-0 fs-3">Account Setting</p>
                             </a>

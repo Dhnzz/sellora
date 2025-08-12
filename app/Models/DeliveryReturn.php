@@ -17,6 +17,7 @@ class DeliveryReturn extends Model
         'status',
         'admin_id', // Admin yang mengkonfirmasi return
         'confirmed_at',
+        'total_amount'
     ];
 
     public function sales_transaction(): BelongsTo

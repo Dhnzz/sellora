@@ -11,7 +11,8 @@ class DeliveryReturnItem extends Model
     protected $fillable  = [
         'delivery_return_id',
         'product_id',
-        'quantity_returned',
+        'unit_price',
+        'quantity',
     ];
 
     public function delivery_return(): BelongsTo

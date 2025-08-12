@@ -15,6 +15,11 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ProductUnitController
 {
+    public $role;
+
+    public function __construct() {
+        $this->role = Auth::user()->getRoleNames()->first();
+    }
     public function index(Request $request)
     {
         $data = [
@@ -28,12 +33,12 @@ class ProductUnitController
                 ],
                 [
                     'name' => 'Unit Produk',
-                    'link' => route('owner.master_data.product_unit.index'),
+                    'link' => route($this->role.'.master_data.product_unit.index'),
                 ],
             ],
         ];
         // Untuk tampilan awal, $product_units sudah di-paginate di atas
-        return view('owner.master_data.product_unit.page.index', compact('data'));
+        return view($this->role.'.master_data.product_unit.page.index', compact('data'));
     }
 
     public function getAll(Request $request)

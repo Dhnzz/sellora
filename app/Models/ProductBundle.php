@@ -10,6 +10,7 @@ class ProductBundle extends Model
 {
     protected $fillable = [
         'bundle_name',
+        'flyer',
         'description',
         'start_date',
         'end_date',

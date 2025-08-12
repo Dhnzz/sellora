@@ -21,12 +21,19 @@
     </div>
 
     <div class="card">
-        <form action="{{ route('owner.user_management.admin.update', $admin->id) }}" method="post"
+        @php
+            $updateRoute = route('owner.user_management.admin.update', $admin->id);
+            if ($data['role'] != 'owner') {
+                $updateRoute = route('admin.profile.update', $admin->id);
+            }
+        @endphp
+        <form action="{{ $updateRoute }}" method="post"
             enctype="multipart/form-data">
             @method('PUT')
             @csrf
             <div class="card-body">
-                <h5 class="mb-3">Edit Admin</h5>
+                <a href="{{ route('owner.user_management.admin.index') }}" class="btn btn-sm btn-primary mb-3"><i class="ti ti-arrow-left"></i>
+                    Kembali</a>
                 <div class="row">
                     <div class="col-12">
                         <div class="mb-3">
@@ -53,8 +60,7 @@
                             <label class="control-label mb-1">Password</label>
                             <div class="input-group">
                                 <input type="password" name="password"
-                                    class="form-control @error('password') is-invalid @enderror"
-                                    placeholder="Password tidak bisa diubah" disabled />
+                                    class="form-control @error('password') is-invalid @enderror" />
                                 <button class="btn btn-primary reset-pass-btn" data-id="{{ $admin->id }}"
                                     type="button"><i class="ti ti-restore"></i></button>
                             </div>

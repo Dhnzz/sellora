@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId('minimum_selling_unit_id')
                 ->constrained('product_units')
                 ->cascadeOnDelete();
-            $table->decimal('selling_price', 12, 4)->check('selling_price >= 0');
+            $table->integer('selling_price');
             $table->text('image')->nullable();
             $table->timestamps();
             $table->unique(['product_brand_id', 'name']);

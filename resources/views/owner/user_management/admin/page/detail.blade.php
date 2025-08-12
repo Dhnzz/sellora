@@ -23,9 +23,8 @@
     <div class="shop-detail">
         <div class="card shadow-none border">
             <div class="card-body p-4">
-                <a href="{{ url()->previous() }}" class="btn btn-sm btn-dark mb-3"><i class="ti ti-arrow-left"></i>
+                <a href="{{ route('owner.user_management.admin.index') }}" class="btn btn-sm btn-primary mb-3"><i class="ti ti-arrow-left"></i>
                     Kembali</a>
-
                 <div class="row g-4">
                     <div class="col-lg-5">
                         <div class="item rounded overflow-hidden">

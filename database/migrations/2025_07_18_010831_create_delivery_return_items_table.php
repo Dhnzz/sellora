@@ -14,9 +14,11 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('delivery_return_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity_returned');
+            $table->integer('unit_price');
+            $table->integer('quantity');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['delivery_return_id', 'product_id'], 'dri_dr_product_idx');
         });
     }
 

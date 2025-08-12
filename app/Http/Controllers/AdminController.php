@@ -2,18 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use Hash;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Admin;
-use Hash;
 use Illuminate\Http\Request;
+use App\Services\AdminService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Validator;
 
 class AdminController
 {
+    public function dashboard()
+    {
+        $data = [
+            'role' => Auth::user()->getRoleNames()->first(),
+            'active' => 'dashboard',
+            'breadcrumbs' => [
+                [
+                    'name' => 'Dashboard',
+                    'link' => route('owner.dashboard'),
+                ],
+            ],
+        ];
+        return view('admin.dashboard', compact('data'));
+    }
+
     public function index(Request $request)
     {
         $data = [
@@ -87,7 +105,7 @@ class AdminController
     public function getById(Admin $admin)
     {
         $data = [
-            'title' => 'Manajemen Admin',
+            'title' => 'Detail Admin',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_admin',
             'breadcrumbs' => [
@@ -113,7 +131,7 @@ class AdminController
     {
         $admins = Admin::all();
         $data = [
-            'title' => 'Manajemen Admin',
+            'title' => 'Tambah Admin',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_admin',
             'breadcrumbs' => [
@@ -137,7 +155,7 @@ class AdminController
     public function edit(Admin $admin)
     {
         $data = [
-            'title' => 'Manajemen Admin',
+            'title' => 'Edit Admin',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_admin',
             'breadcrumbs' => [
@@ -183,9 +201,9 @@ class AdminController
                     Storage::disk('public')->delete($admin->photo);
                     $photoPath = 'uploads/images/users/user-1.jpg';
                     $admin->update([
-                        'photo' => $photoPath
+                        'photo' => $photoPath,
                     ]);
-                    return response()->json(['success' => 'Berhasil menghapus foto '.$admin->name, 'photo' => $photoPath]);
+                    return response()->json(['success' => 'Berhasil menghapus foto ' . $admin->name, 'photo' => $photoPath]);
                 }
             } catch (\Exception $e) {
                 // Log error untuk debugging
@@ -298,6 +316,14 @@ class AdminController
             'photo' => $photoPath,
             'address' => $request->address,
         ]);
+
+        if (Auth::user()->getRoleNames()->first() != 'owner') {
+            if (!$admin) {
+                return redirect()->route('admin.dashboard')->with('error', 'Admin gagal diupdate');
+            }
+    
+            return redirect()->route('admin.dashboard')->with('success', 'Admin berhasil diupdate');
+        }
 
         if (!$admin) {
             return redirect()->route('owner.user_management.admin.index')->with('error', 'Admin gagal diupdate');

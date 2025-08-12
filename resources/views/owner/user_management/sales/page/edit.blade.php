@@ -26,7 +26,8 @@
             @method('PUT')
             @csrf
             <div class="card-body">
-                <h5 class="mb-3">Edit Agen Sales</h5>
+                <a href="{{ route('owner.user_management.sales.index') }}" class="btn btn-sm btn-primary mb-3"><i class="ti ti-arrow-left"></i>
+                    Kembali</a>
                 <div class="row">
                     <div class="col-12">
                         <div class="mb-3">

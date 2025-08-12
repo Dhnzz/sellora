@@ -86,7 +86,7 @@ class CustomerController
     public function getById(Customer $customer)
     {
         $data = [
-            'title' => 'Manajemen Customer',
+            'title' => 'Detail Customer',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_customer',
             'breadcrumbs' => [
@@ -111,7 +111,7 @@ class CustomerController
     public function create()
     {
         $data = [
-            'title' => 'Manajemen Customer',
+            'title' => 'Tambah Customer',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_customer',
             'breadcrumbs' => [
@@ -135,7 +135,7 @@ class CustomerController
     public function edit(Customer $customer)
     {
         $data = [
-            'title' => 'Manajemen Customer',
+            'title' => 'Edit Customer',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_customer',
             'breadcrumbs' => [

@@ -87,7 +87,7 @@ class SalesAgentController
     public function getById(SalesAgent $sales)
     {
         $data = [
-            'title' => 'Manajemen Agen Sales',
+            'title' => 'Detail Agen Sales',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_sales_agent',
             'breadcrumbs' => [
@@ -112,7 +112,7 @@ class SalesAgentController
     public function create()
     {
         $data = [
-            'title' => 'Manajemen Agen Sales',
+            'title' => 'Tambah Agen Sales',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_sales_agent',
             'breadcrumbs' => [
@@ -136,7 +136,7 @@ class SalesAgentController
     public function edit(SalesAgent $sales)
     {
         $data = [
-            'title' => 'Manajemen Agen Sales',
+            'title' => 'Edit Agen Sales',
             'role' => Auth::user()->getRoleNames()->first(),
             'active' => 'user_management_sales_agent',
             'breadcrumbs' => [
