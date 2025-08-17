@@ -16,12 +16,6 @@
                         <input type="hidden" name="to" id="to">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Sales</label>
-                        <select name="sales_id" id="salesSelect" class="form-select">
-                            <option value="">Semua</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select">
                             <option value="">Semua</option>
@@ -34,12 +28,22 @@
                         <button type="submit" class="btn btn-primary">Terapkan</button>
                         <button type="button" id="resetFilter" class="btn btn-outline-secondary">Reset</button>
 
-                        <div class="ms-auto btn-group">
-                            <a href="{{ route('owner.report.export.xlsx') }}" id="exportXlsx" class="btn btn-success">Export
-                                XLSX</a>
+                        <div class="ms-auto d-flex gap-1">
+                            <a href="{{ route('owner.report.export.xlsx') }}" id="exportXlsx"
+                                class="btn btn-sm btn-primary d-flex align-items-center gap-2">
+                                <i class="ti ti-file-type-xls" style="font-size: 1.2em;"></i>
+                                <span>Export XLSX</span>
+                            </a>
                             <a href="{{ route('owner.report.export.csv') }}" id="exportCsv"
-                                class="btn btn-outline-success">CSV</a>
-                            <a href="{{ route('owner.report.export.pdf') }}" id="exportPdf" class="btn btn-danger">PDF</a>
+                                class="btn btn-sm btn-primary d-flex align-items-center gap-2">
+                                <i class="ti ti-file-type-csv" style="font-size: 1.2em;"></i>
+                                <span>Export CSV</span>
+                            </a>
+                            <a href="{{ route('owner.report.export.pdf') }}" id="exportPdf"
+                                class="btn btn-sm btn-primary d-flex align-items-center gap-2">
+                                <i class="ti ti-file-type-pdf" style="font-size: 1.2em;"></i>
+                                <span>Export PDF</span>
+                            </a>
                         </div>
                     </div>
                 </form>
@@ -207,15 +211,77 @@
     </div>
 
     {{-- MODAL DETAIL INVOICE --}}
-    <div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal fade" id="modalInvoiceDetail" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title">Detail Invoice</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">Detail Transaksi <span id="invNo" class="text-muted"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="invoiceDetail"><!-- render by JS --></div>
+                    <div id="invLoading" class="text-center py-4" style="display:none;">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="mt-2">Memuat data...</div>
+                    </div>
+
+                    <div id="invError" class="alert alert-danger d-none"></div>
+
+                    <div id="invContent" style="display:none;">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-4">
+                                <div class="small text-muted mb-1">Tanggal</div>
+                                <div id="invDate" class="fw-semibold">-</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="small text-muted mb-1">Customer</div>
+                                <div id="invCustomer" class="fw-semibold">-</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="small text-muted mb-1">Sales</div>
+                                <div id="invSales" class="fw-semibold">-</div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm table-bordered align-middle mb-0" id="tblInvItems">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Produk</th>
+                                        <th class="text-end" style="width:110px;">Qty</th>
+                                        <th class="text-end" style="width:140px;">Harga</th>
+                                        <th class="text-end" style="width:160px;">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody><!-- diisi via JS --></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Subtotal</th>
+                                        <th class="text-end" id="fSubtotal">Rp 0</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Diskon</th>
+                                        <th class="text-end" id="fDiscount">Rp 0</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Retur</th>
+                                        <th class="text-end text-danger" id="fReturn">Rp 0</th>
+                                    </tr>
+                                    <tr class="table-secondary">
+                                        <th colspan="3" class="text-end">Grand Total</th>
+                                        <th class="text-end" id="fGrand">Rp 0</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div>
+                            <span class="badge bg-secondary" id="invStatus">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a id="btnPrintPdf" class="btn btn-outline-secondary" target="_blank">Print PDF</a>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -324,23 +390,48 @@
             // ------- Utils -------
             const fmtIDR = n => (Number(n || 0)).toLocaleString('id-ID');
 
+            function fmtDate(d) {
+                if (!d) return '-';
+                const dt = new Date(d);
+                if (isNaN(dt)) return d; // biarkan apa adanya
+                return dt.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            }
+
 
             // ------- Date Range -------
             const $dr = $('#daterange'),
                 $from = $('#from'),
                 $to = $('#to');
-            const initFrom = moment().startOf('month'),
-                initTo = moment().endOf('day');
 
-            function setRange(a, b) {
+            // flag “semua”
+            let isAll = false;
+
+            function setRange(a, b, all = false) {
+                isAll = !!all;
+                if (isAll) {
+                    $dr.val('Semua');
+                    $from.val('');
+                    $to.val('');
+                    return;
+                }
                 $dr.val(a.format('DD MMM YYYY') + ' - ' + b.format('DD MMM YYYY'));
                 $from.val(a.format('YYYY-MM-DD'));
                 $to.val(b.format('YYYY-MM-DD'));
             }
+
+            const initFrom = moment().startOf('month');
+            const initTo = moment().endOf('day');
+
             $dr.daterangepicker({
                 startDate: initFrom,
                 endDate: initTo,
+                autoUpdateInput: false, // biar kita kontrol sendiri teksnya
                 ranges: {
+                    'Semua': [moment('1900-01-01'), moment('2099-12-31')],
                     'Hari ini': [moment(), moment()],
                     'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
                     'Minggu ini': [moment().startOf('week'), moment().endOf('week')],
@@ -350,8 +441,21 @@
                 locale: {
                     format: 'DD/MM/YYYY'
                 }
-            }, setRange);
-            setRange(initFrom, initTo);
+            }, function(start, end, label) {
+                // callback saat pilih range
+                if (label === 'Semua') {
+                    setRange(null, null, true); // kosongkan from/to
+                } else {
+                    setRange(start, end, false); // set tanggal normal
+                }
+            });
+            // set default (mis. Bulan ini). kalau mau default “Semua”, panggil setRange(null,null,true)
+            setRange(null, null, true);
+
+            // Saat user ketik manual/clear input, kalau dikosongkan anggap “Semua”
+            $dr.on('cancel.daterangepicker', function() {
+                setRange(null, null, true);
+            });
 
             // ------- Charts Placeholder -------
             let chartTrend, chartMethod;
@@ -474,6 +578,13 @@
                 const params = $('#filterForm').serializeArray().reduce((a, c) => (a[c.name] = c.value, a), {});
                 params.top_product_limit = $('#topProductLimit').val() || 10;
                 params.top_customer_limit = $('#topCustomerLimit').val() || 10; // << baru
+
+                // kalau 'Semua', hapus from/to biar backend ambil semua
+                if ($dr.val() === 'Semua' || (!params.from && !params.to)) {
+                    delete params.from;
+                    delete params.to;
+                }
+
                 return params;
             }
 
@@ -515,6 +626,79 @@
                     });
             }
 
+            function openInvoiceDetail(id) {
+                // reset UI
+                $('#invNo').text('#' + id);
+                $('#invError').addClass('d-none').text('');
+                $('#invContent').hide();
+                $('#invLoading').show();
+
+                const modal = new bootstrap.Modal(document.getElementById('modalInvoiceDetail'));
+                modal.show();
+
+                $.get("{{ route('owner.report.invoice.show', ':id') }}".replace(':id', id))
+                    .done(function(res) {
+                        const h = res.header || {};
+                        const items = res.items || [];
+
+                        // header
+                        $('#invDate').text(fmtDate(h.date));
+                        $('#invCustomer').text(h.customer || '-');
+                        $('#invSales').text(h.sales || '-');
+                        $('#invStatus').text((h.status || '-').toUpperCase())
+                            .removeClass('bg-secondary bg-success bg-warning')
+                            .addClass(
+                                (h.status || '').toLowerCase() === 'success' ? 'bg-success' :
+                                (h.status || '').toLowerCase() === 'process' ? 'bg-warning' : 'bg-secondary'
+                            );
+
+                        // items
+                        const tbody = $('#tblInvItems tbody').empty();
+                        if (items.length === 0) {
+                            tbody.append(
+                                '<tr><td colspan="4" class="text-center text-muted">Tidak ada item</td></tr>');
+                        } else {
+                            items.forEach(it => {
+                                tbody.append(`
+                                        <tr>
+                                            <td>${(it.name||'-')}</td>
+                                            <td class="text-end">${Number(it.qty||0).toLocaleString('id-ID')}</td>
+                                            <td class="text-end">${fmtIDR(it.price||0)}</td>
+                                            <td class="text-end">${fmtIDR(it.line_total||0)}</td>
+                                        </tr>
+                                        `);
+                            });
+                        }
+
+                        // footer totals
+                        $('#fSubtotal').text(fmtIDR(h.subtotal || 0));
+                        $('#fDiscount').text(fmtIDR(h.discount || 0));
+                        $('#fReturn').text(fmtIDR(h.return || 0));
+                        // grand total: total (setelah diskon) - retur
+                        const grand = Number(h.total || 0) - Number(h.return || 0);
+                        $('#fGrand').text(fmtIDR(grand));
+
+                        // tombol print PDF (optional: kirim filter lain kalau mau)
+                        const q = new URLSearchParams({
+                            stream: 1,
+                            orientation: 'portrait'
+                        }).toString();
+                        $('#btnPrintPdf').attr('href', `{{ route('owner.report.export.pdf') }}?${q}`);
+
+                        $('#btnPrintPdf').attr('href', `{{ route('owner.report.invoice.pdf', ':id') }}`
+                            .replace(':id', id) + '?stream=1');
+
+                        $('#invLoading').hide();
+                        $('#invContent').show();
+                    })
+                    .fail(function(xhr) {
+                        $('#invLoading').hide();
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message :
+                            'Gagal memuat detail.';
+                        $('#invError').removeClass('d-none').text(msg);
+                    });
+            }
+
             // ------- Events -------
             $('#filterForm').on('submit', function(e) {
                 e.preventDefault();
@@ -524,7 +708,7 @@
 
             $('#resetFilter').on('click', function() {
                 $('#filterForm').trigger('reset');
-                setRange(moment().startOf('month'), moment().endOf('day'));
+                setRange(null, null, true); // set ke "Semua"
                 loadData();
                 dtInvoices.ajax.reload();
             });
@@ -535,15 +719,7 @@
             // Detail modal (placeholder)
             $(document).on('click', '.see-detail', function() {
                 const id = $(this).data('id');
-                $('#invoiceDetail').html('<div class="text-center py-4">Loading...</div>');
-                // TODO: panggil endpoint detail invoice
-                setTimeout(() => {
-                    $('#invoiceDetail').html(`
-                        <div class="mb-2"><strong>Invoice #${id}</strong></div>
-                        <div class="small text-muted">Detail item akan dirender di sini…</div>
-                    `);
-                }, 300);
-                new bootstrap.Modal('#invoiceModal').show();
+                openInvoiceDetail(id);
             });
 
             // Init pertama kali

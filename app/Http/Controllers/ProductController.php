@@ -35,10 +35,36 @@ class ProductController
         return view('owner.master_data.product.page.index', compact('data'));
     }
 
+    public function test()
+    {
+        $data = Product::latest()
+                ->leftJoin('stocks', 'products.id', '=', 'stocks.product_id')
+                ->rightJoin('product_units', 'product_units.id', '=', 'products.minimum_selling_unit_id')
+                ->rightJoin('product_brands', 'product_brands.id', '=', 'products.product_brand_id')
+                ->select('products.name','products.created_at','discount', 'selling_price')->orderBy('discount', 'desc')->get();
+        $discount = '';
+                
+        dd($data);
+    }
+
     public function getAll(Request $request)
     {
         if ($request->ajax()) {
-            $data = Product::latest()->leftJoin('stocks', 'products.id', '=', 'stocks.product_id')->rightJoin('product_units', 'product_units.id', '=', 'products.minimum_selling_unit_id')->rightJoin('product_brands', 'product_brands.id', '=', 'products.product_brand_id')->select('products.id', 'products.name as product_name', 'products.selling_price', 'product_units.name as msu_name', 'stocks.quantity', 'products.created_at')->whereHas('stock')->whereHas('product_brand')->whereHas('product_unit');
+            $data = Product::latest()->leftJoin('stocks', 'products.id', '=', 'stocks.product_id')
+                ->rightJoin('product_units', 'product_units.id', '=', 'products.minimum_selling_unit_id')
+                ->rightJoin('product_brands', 'product_brands.id', '=', 'products.product_brand_id')
+                ->select(
+                    'products.id',
+                    'products.name as product_name',
+                    'products.discount as product_discount',
+                    'products.selling_price',
+                    'product_units.name as msu_name',
+                    'stocks.quantity',
+                    'products.created_at'
+                )
+                ->whereHas('stock')
+                ->whereHas('product_brand')
+                ->whereHas('product_unit');
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -57,6 +83,10 @@ class ProductController
                 ->editColumn('quantity', function ($row) {
                     return $row->quantity . ' ' . ucfirst($row->msu_name);
                 })
+                ->editColumn('product_discount', function($row){
+                    // Ubah dari 0.12 menjadi 12%
+                    return ($row->product_discount * 100) . '%';
+                })
                 ->rawColumns(['options'])
                 ->filter(function ($query) use ($request) {
                     // Filter berdasarkan pencarian global DataTables
@@ -65,6 +95,7 @@ class ProductController
                         $query
                             ->where('products.name', 'like', "%{$searchValue}%")
                             ->orWhere('products.selling_price', 'like', "%{$searchValue}%")
+                            ->orWhere('products.discount', 'like', "%{$searchValue}%")
                             ->orWhere('product_units.name', 'like', "%{$searchValue}%")
                             ->orWhere('stocks.quantity', 'like', "%{$searchValue}%");
                     }
@@ -78,7 +109,7 @@ class ProductController
                         $sortDirection = $order['dir'];
 
                         // Pastikan hanya kolom yang boleh di-sort yang diproses
-                        $sortableColumns = ['id', 'product_name', 'selling_price', 'msu_name', 'quantity']; // Kolom yang bisa di-sort
+                        $sortableColumns = ['id', 'product_name', 'selling_price', 'msu_name', 'product_discount', 'quantity']; // Kolom yang bisa di-sort
                         if (in_array($columnName, $sortableColumns)) {
                             $query->orderBy($columnName, $sortDirection);
                         } elseif ($columnName === 'DT_RowIndex') {
@@ -226,6 +257,7 @@ class ProductController
             'name' => $request->name,
             'product_brand_id' => $request->product_brand,
             'minimum_selling_unit_id' => $request->product_unit,
+            'discount' => 0.00,
             'selling_price' => $request->selling_price,
             'image' => $imagePath,
         ]);
@@ -251,6 +283,7 @@ class ProductController
                 'name' => 'required',
                 'product_brand' => 'required',
                 'product_unit' => 'required',
+                'discount' => 'nullable|numeric|min:10|max:100',
                 'selling_price' => 'required|numeric',
                 'stock' => 'required',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -259,6 +292,9 @@ class ProductController
                 'name.required' => 'Nama produk wajib diisi.',
                 'product_brand.required' => 'Brand produk wajib diisi.',
                 'product_unit.required' => 'MSU wajib diisi.',
+                'discount.numeric' => 'Diskon harus berupa angka.',
+                'discount.min' => 'Diskon minimal 0%.',
+                'discount.max' => 'Diskon maksimal 100%.',
                 'selling_price.required' => 'Harga jual wajib diisi.',
                 'stock.required' => 'Stock wajib diisi.',
                 'image.image' => 'File gambar harus berupa gambar.',
@@ -287,6 +323,7 @@ class ProductController
             'name' => $request->name,
             'product_brand_id' => $request->product_brand,
             'minimum_selling_unit_id' => $request->product_unit,
+            'discount' => floatval($request->discount) / 100,
             'selling_price' => $request->selling_price,
             'image' => $imagePath,
         ]);

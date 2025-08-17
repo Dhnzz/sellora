@@ -18,8 +18,9 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('name', 255);
             $table->foreignId('minimum_selling_unit_id')
-                ->constrained('product_units')
-                ->cascadeOnDelete();
+            ->constrained('product_units')
+            ->cascadeOnDelete();
+            $table->decimal('discount', 3)->default(0);
             $table->integer('selling_price');
             $table->text('image')->nullable();
             $table->timestamps();

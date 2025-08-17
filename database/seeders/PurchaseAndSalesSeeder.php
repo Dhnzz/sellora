@@ -28,6 +28,7 @@ use App\Models\SalesTransactionItem;
 use App\Models\SupplierPurchaseItem;
 use Database\Seeders\CustomerSeeder;
 use Database\Seeders\SalesAgentSeeder;
+use Illuminate\Support\Facades\Schema;
 use Database\Seeders\ProductRelatedSeeder;
 use Faker\Factory as Faker; // Import Faker
 use Database\Seeders\WarehouseManagerSeeder;
@@ -122,74 +123,106 @@ class PurchaseAndSalesSeeder extends Seeder
             $successfulSalesCount = 0;
             $totalSalesTransactionAmount = 0;
             foreach ($confirmedPurchaseOrders as $po) {
-                // Cek apakah PO ini sudah punya SalesTransaction (untuk menghindari unique constraint)
                 if (SalesTransaction::where('purchase_order_id', $po->id)->exists()) {
                     continue;
                 }
 
-                // Sales Transaction Date (invoice_date) harus setelah order_date PO
+                // invoice_date harus >= order_date
                 $invoiceDate = $faker->dateTimeBetween($po->order_date, 'now');
 
-                // Delivery confirmed at (bisa null kalau belum diantar/dibayar)
+                // Status & delivery (random)
                 $deliveryConfirmedAt = null;
-                $paymentStatus = 'success'; // Default
-
-                // Randomly simulate some deliveries being confirmed and paid
+                $paymentStatus = 'success';
                 if ($faker->boolean(80)) {
                     $deliveryConfirmedAt = (clone $invoiceDate)->modify('+' . rand(0, 7) . ' days');
                     $paymentStatus = $faker->randomElement(['process', 'success']);
                 }
 
-                // Ambil admin_user_id dan sales_agent_user_id dari model Admin dan SalesAgent
+                // ambil admin & sales
                 $limitedAdmins = $admins->take(10);
                 $limitedSales = $salesAgents->take(5);
                 $adminUser = $limitedAdmins->random();
                 $salesAgentUser = $limitedSales->random();
 
-                // Hitung initial_total_amount dan final_amount_paid
-                $initialTotalAmount = 0;
+                // ====== RUMUS DISKON ======
+                // 1) Diskon produk (line-level) dulu
+                // 2) Subtotal = sum(line setelah diskon produk)
+                // 3) Diskon transaksi (order-level) diapply ke subtotal
+
+                // cek kolom snapshot item (biar aman kalau belum migrasi)
+                $hasUnitPriceCol = Schema::hasColumn('sales_transaction_items', 'unit_price');
+                $hasProdDiscCol = Schema::hasColumn('sales_transaction_items', 'product_discount_percent');
+                $hasUnitAfterCol = Schema::hasColumn('sales_transaction_items', 'unit_price_after_product_discount');
+                $hasLineBeforeCol = Schema::hasColumn('sales_transaction_items', 'line_total_before_order_discount');
+
+                // rakit item + hitung subtotal SEBELUM diskon transaksi
+                $subtotalBeforeOrderDiscount = 0;
                 $salesTransactionItemsData = [];
                 $poItems = $po->purchase_order_items()->get();
+
                 foreach ($poItems as $poProduct) {
                     $product = $products->find($poProduct->product_id);
-                    if ($product) {
-                        $itemUnitPrice = $product->selling_price;
-                        $itemInitialAmount = $poProduct->quantity * $itemUnitPrice;
-                        $initialTotalAmount += $itemInitialAmount;
-
-                        $quantitySold = $poProduct->quantity;
-
-                        // Simulate some returns on delivery
-                        if ($paymentStatus != 'success' && $faker->boolean(30)) {
-                            $quantitySold = rand(1, $poProduct->quantity - 1);
-                            if ($quantitySold <= 0) {
-                                $quantitySold = 0;
-                            }
-                        }
-
-                        $salesTransactionItemsData[] = [
-                            'product_id' => $product->id,
-                            'quantity_ordered' => $poProduct->quantity,
-                            'quantity_sold' => $quantitySold,
-                            'msu_price' => $itemUnitPrice,
-                        ];
+                    if (!$product) {
+                        continue;
                     }
+
+                    $qtyOrdered = (int) $poProduct->quantity;
+                    $qtySold = $qtyOrdered;
+
+                    // simulasi retur di tempat (kalau bukan success)
+                    if ($paymentStatus !== 'success' && $qtyOrdered > 1 && $faker->boolean(30)) {
+                        $qtySold = rand(1, $qtyOrdered - 1);
+                        if ($qtySold <= 0) {
+                            $qtySold = 0;
+                        }
+                    }
+
+                    $unitPrice = (float) $product->selling_price; // harga asli saat ini
+                    $pdisc = (float) ($product->discount_percent ?? 0); // diskon produk (%)
+                    $pdisc = max(0, min(100, $pdisc));
+                    $unitAfter = round($unitPrice * (1 - $pdisc / 100), 2); // harga satuan setelah diskon produk
+                    $lineBeforeOrder = round($unitAfter * $qtySold, 2); // subtotal line sebelum diskon order
+
+                    $subtotalBeforeOrderDiscount += $lineBeforeOrder;
+
+                    // siapkan payload item
+                    $row = [
+                        'product_id' => $product->id,
+                        'quantity_ordered' => $qtyOrdered,
+                        'quantity_sold' => $qtySold,
+                        'msu_price' => $unitPrice, // kolom lama kamu; dipakai sebagai unit price asli
+                    ];
+
+                    // snapshot kolom tambahan kalau tersedia
+                    if ($hasUnitPriceCol) {
+                        $row['unit_price'] = $unitPrice;
+                    }
+                    if ($hasProdDiscCol) {
+                        $row['product_discount_percent'] = $pdisc;
+                    }
+                    if ($hasUnitAfterCol) {
+                        $row['unit_price_after_product_discount'] = $unitAfter;
+                    }
+                    if ($hasLineBeforeCol) {
+                        $row['line_total_before_order_discount'] = $lineBeforeOrder;
+                    }
+
+                    $salesTransactionItemsData[] = $row;
                 }
 
-                $discountPercent = $faker->numberBetween(0, 15);
-                $totalAmountAfterDiscount = $initialTotalAmount * (1 - $discountPercent / 100);
+                // Diskon transaksi ORDER-LEVEL (misal 0–15%)
+                $orderDiscountPercent = $faker->numberBetween(0, 15);
+                $totalAmountAfterDiscount = round($subtotalBeforeOrderDiscount * (1 - $orderDiscountPercent / 100), 2);
 
-                // final_amount_paid bisa kurang dari totalAmountAfterDiscount jika ada retur di tempat
+                // final_amount_paid (boleh kurang kalau retur/process)
                 $finalAmountPaid = $totalAmountAfterDiscount;
-                if ($paymentStatus == 'success') {
-                    $finalAmountPaid = $totalAmountAfterDiscount; // full paid
-                } elseif ($paymentStatus == 'not_paid') {
+                if ($paymentStatus === 'not_paid') {
                     $finalAmountPaid = 0;
                 }
 
                 try {
-                    $invoiceDateStr = $invoiceDate->format('Y-m-d');
-                    $invoiceDateForId = $invoiceDate->format('dmY');
+                    $invoiceDateStr = Carbon::instance($invoiceDate)->format('Y-m-d');
+                    $invoiceDateForId = Carbon::instance($invoiceDate)->format('dmY');
                     $todayCount = SalesTransaction::whereDate('invoice_date', $invoiceDateStr)->count() + 1;
                     $invoiceId = 'INV-' . $invoiceDateForId . '-' . str_pad($todayCount, 4, '0', STR_PAD_LEFT);
 
@@ -198,27 +231,32 @@ class PurchaseAndSalesSeeder extends Seeder
                         'admin_id' => $adminUser->id,
                         'sales_agent_id' => $salesAgentUser->id,
                         'invoice_id' => $invoiceId,
-                        'invoice_date' => $invoiceDate->format('Y-m-d'),
-                        'discount_percent' => $discountPercent,
-                        'initial_total_amount' => $initialTotalAmount,
-                        'final_total_amount' => $finalAmountPaid,
-                        'note' => "Lorem, ipsum dolor.",
+                        'invoice_date' => $invoiceDateStr,
+
+                        // ==== snapshot total & diskon transaksi ====
+                        // pakai field existing di model kamu:
+                        'discount_percent' => $orderDiscountPercent, // diskon transaksi (%)
+                        'initial_total_amount' => $subtotalBeforeOrderDiscount, // subtotal setelah diskon produk, sebelum diskon order
+                        'final_total_amount' => $finalAmountPaid, // total akhir setelah diskon order
+
+                        'note' => 'Lorem, ipsum dolor.',
                         'transaction_status' => $paymentStatus,
                         'delivery_confirmed_at' => $deliveryConfirmedAt,
                     ]);
                     $successfulSalesCount++;
                     $totalSalesTransactionAmount += $finalAmountPaid;
 
-                    // Tambahkan SalesTransactionItem
+                    // Tambahkan item
                     foreach ($salesTransactionItemsData as $itemData) {
                         $salesTransaction->sales_transaction_items()->create($itemData);
                     }
 
-                    // Update stock based on quantity_sold
+                    // Update stok berdasarkan quantity_sold
                     foreach ($salesTransactionItemsData as $itemData) {
                         $product = Product::find($itemData['product_id']);
-                        if ($product && $itemData['quantity_sold'] > 0) {
-                            $product->stock()->decrement('quantity', $itemData['quantity_sold']);
+                        $qtySold = (int) ($itemData['quantity_sold'] ?? 0);
+                        if ($product && $qtySold > 0) {
+                            $product->stock()->decrement('quantity', $qtySold);
                         }
                     }
                 } catch (\Exception $e) {
@@ -360,7 +398,7 @@ class PurchaseAndSalesSeeder extends Seeder
             // ============================ Stock Adjustments (Manual/Other Reasons) ============================
             $numManualAdjustments = rand(5, 10);
             $successfulManualAdjustments = 0;
-            $warehouseManagers = \App\Models\WarehouseManager::all(); // Ensure this is loaded if not already at the top
+            $warehouseManagers = WarehouseManager::all(); // Ensure this is loaded if not already at the top
 
             if ($warehouseManagers->isNotEmpty()) {
                 for ($i = 0; $i < $numManualAdjustments; $i++) {

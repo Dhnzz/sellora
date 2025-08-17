@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\SalesAgent;
-use PDF;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Exports\ReportExport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController
 {
@@ -263,16 +264,188 @@ class ReportController
         ]);
     }
 
+    public function invoiceShow($id)
+    {
+        // Header transaksi
+        $h = DB::table('sales_transactions as st')
+            ->leftJoin('purchase_orders as po', 'po.id', '=', 'st.purchase_order_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'po.customer_id')
+            ->leftJoin('sales_agents as sa', 'sa.id', '=', 'st.sales_agent_id')
+            ->where('st.id', $id)
+            ->selectRaw(
+                '
+            st.id,
+            st.invoice_id as invoice_number,
+            st.invoice_date,
+            COALESCE(c.name,"-")  as customer,
+            COALESCE(sa.name,"-") as sales,
+            st.initial_total_amount as subtotal,
+            (st.initial_total_amount - st.final_total_amount) as discount,
+            st.final_total_amount as total,
+            st.transaction_status as status
+        ',
+            )
+            ->first();
+
+        if (!$h) {
+            return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+        }
+
+        // Total retur (pakai header delivery_returns.total_amount kalau ada)
+        $returnTotal = DB::table('delivery_returns as dr')->where('dr.sales_transaction_id', $id)->sum('dr.total_amount');
+
+        // Items
+        $items = DB::table('sales_transaction_items as sti')
+            ->join('products as p', 'p.id', '=', 'sti.product_id')
+            ->where('sti.sales_transaction_id', $id)
+            ->selectRaw(
+                '
+            p.name,
+            sti.quantity_sold as qty,
+            sti.msu_price as price,
+            (sti.quantity_sold * sti.msu_price) as line_total
+        ',
+            )
+            ->get();
+
+        // Recompute grand total (kalau mau tampilkan retur)
+        $header = [
+            'id' => $h->id,
+            'date' => $h->invoice_date,
+            'customer' => $h->customer,
+            'sales' => $h->sales,
+            'subtotal' => (float) $h->subtotal,
+            'discount' => (float) $h->discount,
+            'return' => (float) $returnTotal,
+            'total' => (float) $h->total, // total setelah diskon (sebelum retur)
+            'status' => $h->status,
+            'net_after_return' => (float) $h->total - (float) $returnTotal, // opsional
+        ];
+
+        return response()->json([
+            'header' => $header,
+            'items' => $items,
+        ]);
+    }
+
+    public function exportInvoicePdf($id)
+    {
+        // header transaksi
+        $h = DB::table('sales_transactions as st')
+            ->leftJoin('purchase_orders as po', 'po.id', '=', 'st.purchase_order_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'po.customer_id')
+            ->leftJoin('sales_agents as sa', 'sa.id', '=', 'st.sales_agent_id')
+            ->where('st.id', $id)
+            ->selectRaw(
+                '
+            st.id,
+            st.invoice_id as invoice_number,
+            st.invoice_date,
+            COALESCE(c.name,"-")  as customer,
+            COALESCE(sa.name,"-") as sales,
+            st.initial_total_amount as subtotal,
+            (st.initial_total_amount - st.final_total_amount) as discount,
+            st.final_total_amount as total,
+            st.transaction_status as status
+        ',
+            )
+            ->first();
+
+        if (!$h) {
+            abort(404, 'Transaksi tidak ditemukan');
+        }
+
+        // total retur
+        $returnTotal = DB::table('delivery_returns as dr')->where('dr.sales_transaction_id', $id)->sum('dr.total_amount');
+
+        // items
+        $items = DB::table('sales_transaction_items as sti')
+            ->join('products as p', 'p.id', '=', 'sti.product_id')
+            ->where('sti.sales_transaction_id', $id)
+            ->selectRaw(
+                '
+            p.name,
+            sti.quantity_sold as qty,
+            sti.msu_price as price,
+            (sti.quantity_sold * sti.msu_price) as line_total
+        ',
+            )
+            ->get();
+
+        $payload = [
+            'header' => [
+                'id' => $h->id,
+                'invoice_number' => $h->invoice_number,
+                'date' => $h->invoice_date,
+                'customer' => $h->customer,
+                'sales' => $h->sales,
+                'subtotal' => (float) $h->subtotal,
+                'discount' => (float) $h->discount,
+                'return' => (float) $returnTotal,
+                'total' => (float) $h->total,
+                'status' => $h->status,
+                'grand' => (float) $h->total - (float) $returnTotal,
+            ],
+            'items' => $items,
+        ];
+
+        $orientation = request('orientation') === 'landscape' ? 'landscape' : 'portrait'; // optional
+        $pdf = Pdf::loadView('owner.report.invoice-pdf', $payload)->setPaper('A4', $orientation);
+
+        // ?stream=1 untuk preview di tab
+        return request()->boolean('stream') ? $pdf->stream("invoice-{$h->invoice_number}.pdf") : $pdf->download("invoice-{$h->invoice_number}.pdf");
+    }
+
     public function exportXlsx(Request $r)
     {
         [$from, $to] = $this->dateRange($r);
-        return Excel::download(new ReportExport($r->all(), $from, $to), 'sales-report.xlsx');
+
+        // Format tanggal untuk nama file
+        $fromStr = $from ? Carbon::parse($from)->format('Ymd') : 'all';
+        $toStr = $to ? Carbon::parse($to)->format('Ymd') : 'all';
+
+        if ($fromStr === 'all' && $toStr === 'all') {
+            $filename = 'salesReport_All.xlsx';
+        } else {
+            $filename = "salesReport_{$fromStr}_{$toStr}.xlsx";
+        }
+
+        return Excel::download(new ReportExport($r->all(), $from, $to), $filename);
     }
 
     public function exportCsv(Request $r)
     {
         [$from, $to] = $this->dateRange($r);
-        return Excel::download(new ReportExport($r->all(), $from, $to), 'sales-report.csv', Excel::CSV);
+
+        // Format tanggal untuk nama file
+        $fromStr = $from ? Carbon::parse($from)->format('Ymd') : 'all';
+        $toStr = $to ? Carbon::parse($to)->format('Ymd') : 'all';
+
+        if ($fromStr === 'all' && $toStr === 'all') {
+            $filename = 'salesReport_All.csv';
+        } else {
+            $filename = "salesReport_{$fromStr}_{$toStr}.csv";
+        }
+        return Excel::download(new ReportExport($r->all(), $from, $to), $filename, ExcelFormat::CSV);
+    }
+
+    public function exportPdf(Request $r)
+    {
+        // ambil payload dari method data() biar 1 sumber kebenaran (ikut filter: from/to/status/limits)
+        $reqClone = Request::create('', 'GET', $r->all());
+        $payload = $this->data($reqClone)->getData(true); // array siap dipakai di Blade
+
+        // orientation opsional via query ?orientation=landscape
+        $orientation = $r->get('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+        // Agar variabel di view sama seperti saat Pdf::loadView, gunakan spread operator
+        // return view('owner.report.pdf', $payload + ['orientation' => $orientation]);
+
+        // // render PDF dari Blade yang sudah kamu punya
+        $pdf = Pdf::loadView('owner.report.pdf', $payload)->setPaper('A4', $orientation);
+
+        // // ?stream=1 untuk buka di tab (preview), default download
+        return $r->boolean('stream') ? $pdf->stream('sales-report.pdf') : $pdf->download('sales-report.pdf');
     }
 
     private function dateRange(Request $r): array

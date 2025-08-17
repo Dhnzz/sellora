@@ -35,6 +35,7 @@
                             <th class="text-center" style="width: 5%">No</th>
                             <th class="text-center" style="width: 30%">Nama Produk</th>
                             <th class="text-center" style="width: 10%">MSU</th>
+                            <th class="text-center" style="width: 10%">Diskon</th>
                             <th class="text-center" style="width: 30%">Harga Jual</th>
                             <th class="text-center" style="width: 30%">Stock</th>
                             <th class="text-center" style="width: 20%">Opsi</th>
@@ -63,6 +64,16 @@
                     // data: function (d) {
                     //     d.myCustomParam = 'someValue';
                     // }
+                    complete: function(jqXHR, textStatus) {
+                        if (textStatus === 'success') {
+                            // Tampilkan notifikasi sukses jika data berhasil dimuat
+                            // toastr.success('Data produk berhasil dimuat!');
+                            // Tampilkan data di konsol untuk debug
+                            if (jqXHR && jqXHR.responseJSON) {
+                                console.log('Data produk:', jqXHR.responseJSON);
+                            }
+                        }
+                    },
                 },
                 columns: [{
                         data: 'DT_RowIndex',
@@ -89,6 +100,11 @@
                         }
                     },
                     {
+                        data: 'product_discount',
+                        name: 'product_discount',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'selling_price',
                         name: 'selling_price',
                         className: 'text-center'
@@ -106,9 +122,9 @@
                         className: 'text-center'
                     },
                 ],
-                order: [
-                    [4, 'desc']
-                ],
+                // order: [
+                //     [5, 'desc']
+                // ],
                 layout: {
                     topStart: 'search',
                     topEnd: 'pageLength',

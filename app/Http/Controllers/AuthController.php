@@ -95,7 +95,7 @@ class AuthController
                     case 'sales':
                         return redirect()->intended('/sales/dashboard')->with('success', 'Login berhasil');
                     case 'customer':
-                        return redirect()->intended('/customer')->with('success', 'Login berhasil');
+                        return redirect()->intended('/customer/home')->with('success', 'Login berhasil');
                     default:
                         # code...
                         break;

@@ -1,32 +1,32 @@
 @php
-    // Guard & helper
+    // Payload datang dari ReportController::exportPdf -> $this->data(...)->getData(true)
+    // Struktur: ['cards'=>..., 'trend'=>..., 'top_products'=>..., 'top_customers'=>..., 'invoices'=>...]
     $cards = $cards ?? [];
-    $trend = $trend ?? [];
-    $methods = $methods ?? [];
-    $top_products = $top_products ?? [];
-    $top_customers = $top_customers ?? [];
-    $invoices = $invoices ?? [];
+    $trend = collect($trend ?? []);
+    $top_products = collect($top_products ?? []);
+    $top_customers = collect($top_customers ?? []);
+    $invoices = collect($invoices ?? []);
 
-    $from = request('from');
-    $to = request('to');
-
-    function idr($n)
+    // Helper mini
+    function rupiah($v)
     {
-        return 'Rp ' . number_format((float) $n, 0, ',', '.');
-    }
-    function nf($n)
-    {
-        return number_format((float) $n, 0, ',', '.');
+        return 'Rp ' . number_format((float) $v, 0, ',', '.');
     }
 
-    // Date label
-    $dateLabel =
-        $from && $to
-            ? \Carbon\Carbon::parse($from)->format('d M Y') . ' s/d ' . \Carbon\Carbon::parse($to)->format('d M Y')
-            : 'Semua Tanggal';
+    function tgl($d)
+    {
+        return $d ? \Carbon\Carbon::parse($d)->format('d M Y') : '-';
+    }
 
-    // Company (opsional)
-    $companyName = config('app.name', 'Perusahaan XYZ');
+    // Info filter (opsional): ambil dari request()->query()
+    $q = request()->query();
+    $from = $q['from'] ?? null;
+    $to = $q['to'] ?? null;
+    $status = $q['status'] ?? null;
+    $sales = $q['sales_id'] ?? null;
+    $cust = $q['customer_id'] ?? null;
+
+    $rangeLabel = !$from && !$to ? 'Semua' : tgl($from) . ' - ' . tgl($to);
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -35,23 +35,36 @@
     <meta charset="utf-8">
     <title>Laporan Penjualan</title>
     <style>
-        /* Reset ringan */
-        * {
-            box-sizing: border-box;
+        /* ===== Layout Halaman ===== */
+        @page {
+            margin: 90px 28px 70px 28px;
+            /* top right bottom left */
+            size: A4 {{ request('orientation') === 'landscape' ? 'landscape' : 'portrait' }};
         }
 
         body {
-            font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
-            font-size: 12px;
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 11px;
             color: #222;
         }
 
         h1,
         h2,
-        h3,
-        h4,
-        h5 {
-            margin: 0 0 6px;
+        h3 {
+            margin: 0 0 6px 0;
+        }
+
+        h1 {
+            font-size: 18px;
+        }
+
+        h2 {
+            font-size: 14px;
+        }
+
+        h3 {
+            font-size: 12px;
+            color: #444;
         }
 
         .muted {
@@ -59,43 +72,110 @@
         }
 
         .small {
-            font-size: 11px;
+            font-size: 10px;
+        }
+
+        /* Header/Footer fixed */
+        header {
+            position: fixed;
+            top: -70px;
+            left: 0;
+            right: 0;
+            height: 70px;
+        }
+
+        footer {
+            position: fixed;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            color: #666;
+        }
+
+        .header-wrap {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 6px;
+            display: table;
+            width: 100%;
+        }
+
+        .logo {
+            display: table-cell;
+            vertical-align: middle;
+            width: 120px;
+        }
+
+        .logo img {
+            max-height: 40px;
+        }
+
+        .title {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .title .sub {
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .footer-wrap {
+            border-top: 1px solid #ddd;
+            padding-top: 6px;
+            display: table;
+            width: 100%;
+        }
+
+        .left {
+            display: table-cell;
+            text-align: left;
         }
 
         .right {
+            display: table-cell;
             text-align: right;
         }
 
-        .center {
-            text-align: center;
+        /* Page number */
+        .pagenum:before {
+            content: counter(page);
         }
 
-        /* Header + Footer */
-        .header {
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 8px;
+        .totalpages:before {
+            content: counter(pages);
+        }
+
+        /* ===== Utilities ===== */
+        .mb-2 {
+            margin-bottom: 6px;
+        }
+
+        .mb-3 {
             margin-bottom: 10px;
         }
 
-        .header .title {
-            font-size: 18px;
-            font-weight: 700;
+        .mb-4 {
+            margin-bottom: 14px;
         }
 
-        .header .meta {
-            font-size: 11px;
-            color: #555;
+        .mt-2 {
+            margin-top: 6px;
         }
 
-        /* Grid cards */
+        .mt-3 {
+            margin-top: 10px;
+        }
+
         .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -6px;
+            width: 100%;
+            display: table;
+            table-layout: fixed;
         }
 
         .col {
-            padding: 0 6px;
+            display: table-cell;
+            vertical-align: top;
         }
 
         .col-3 {
@@ -103,316 +183,330 @@
         }
 
         .col-4 {
-            width: 33.3333%;
+            width: 33.33%;
         }
 
         .col-6 {
             width: 50%;
         }
 
-        .col-12 {
-            width: 100%;
+        .badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background: #f0f0f0;
         }
 
-        .card {
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .kpi {
             border: 1px solid #e5e5e5;
             border-radius: 6px;
             padding: 8px;
-            margin-bottom: 10px;
         }
 
-        .card .label {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 2px;
+        .kpi h2 {
+            font-size: 14px;
+            margin: 0;
         }
 
-        .card .value {
+        .kpi .val {
             font-size: 16px;
-            font-weight: 700;
+            font-weight: bold;
+            margin-top: 4px;
         }
 
+        /* ===== Table ===== */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0 0 10px;
         }
 
+        thead {
+            display: table-header-group;
+        }
+
+        /* repeat header on new page */
+        tfoot {
+            display: table-footer-group;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        /* prevent row split */
         th,
         td {
-            border: 1px solid #e5e5e5;
             padding: 6px 8px;
+            border: 1px solid #e3e3e3;
         }
 
         th {
-            background: #f6f6f6;
-            font-weight: 700;
+            background: #f7f7f7;
+            font-weight: bold;
         }
 
-        tbody tr:nth-child(even) {
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .money {
+            text-align: right;
+        }
+
+        .table-compact th,
+        .table-compact td {
+            padding: 5px 6px;
+        }
+
+        .w-40 {
+            width: 40%;
+        }
+
+        .w-10 {
+            width: 10%;
+        }
+
+        .w-12 {
+            width: 12%;
+        }
+
+        /* Section break */
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin: 12px 0 6px;
+        }
+
+        /* Info filter box */
+        .filter-box {
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 6px 8px;
             background: #fbfbfb;
         }
 
-        /* Page breaks */
-        .page-break {
-            page-break-after: always;
-        }
-
-        @page {
-            margin: 20px 24px;
-        }
-
-        .section-title {
-            font-weight: 700;
-            margin: 10px 0 6px;
-        }
-
-        /* Badge status */
-        .badge {
+        .filter-box .kv {
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
+            margin-right: 12px;
         }
 
-        .bg-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .bg-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .bg-secondary {
-            background: #e5e7eb;
-            color: #374151;
+        .kv .k {
+            color: #666;
+            margin-right: 4px;
         }
     </style>
+    
 </head>
 
 <body>
 
-    {{-- HEADER --}}
-    <div class="header">
-        <table style="width:100%; border:0">
-            <tr>
-                <td style="border:0">
-                    <div class="title">{{ $companyName }}</div>
-                    <div class="meta">Laporan Penjualan • {{ $dateLabel }}</div>
-                </td>
-                <td class="right muted" style="border:0">
+    {{-- ===== Header ===== --}}
+    <header>
+        <div class="header-wrap">
+            <div class="logo">
+                {{-- pakai public_path agar DomPDF bisa baca file lokal --}}
+                {{-- <img src="{{ public_path('logo.png') }}" alt="Logo"> --}}
+            </div>
+            <div class="title">
+                <h1>Laporan Penjualan</h1>
+                <div class="sub small">
                     Dicetak: {{ now()->format('d M Y H:i') }}
-                </td>
-            </tr>
-        </table>
-    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    {{-- KPI CARDS --}}
-    <div class="row">
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Total Penjualan (Gross)</div>
-                <div class="value">{{ idr($cards['gross'] ?? 0) }}</div>
-            </div>
+    {{-- ===== Footer ===== --}}
+    <footer>
+        <div class="footer-wrap small">
+            <div class="left">Sellora • Laporan Penjualan</div>
+            <div class="right">Hal. <span class="pagenum"></span> / <span class="totalpages"></span></div>
         </div>
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Diskon</div>
-                <div class="value">{{ idr($cards['discount'] ?? 0) }}</div>
-            </div>
-        </div>
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Pajak</div>
-                <div class="value">{{ idr($cards['tax'] ?? 0) }}</div>
-            </div>
-        </div>
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Net Sales</div>
-                <div class="value">{{ idr($cards['net_sales'] ?? 0) }}</div>
+    </footer>
+
+    <main>
+        {{-- ===== Ringkasan & Filter ===== --}}
+        <div class="mb-3">
+            <div class="filter-box small">
+                <span class="kv"><span class="k">Rentang:</span> {{ $rangeLabel }}</span>
+                @if ($status)
+                    <span class="kv"><span class="k">Status:</span> {{ strtoupper($status) }}</span>
+                @endif
+                @if ($sales)
+                    <span class="kv"><span class="k">Sales ID:</span> {{ $sales }}</span>
+                @endif
+                @if ($cust)
+                    <span class="kv"><span class="k">Customer ID:</span> {{ $cust }}</span>
+                @endif
             </div>
         </div>
 
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Retur</div>
-                <div class="value">{{ idr($cards['return_total'] ?? 0) }}</div>
+        {{-- ===== KPI Cards ===== --}}
+        <div class="row mb-4">
+            <div class="col col-3">
+                <div class="kpi">
+                    <h2>Gross</h2>
+                    <div class="val">{{ rupiah($cards['gross'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col col-3">
+                <div class="kpi">
+                    <h2>Diskon</h2>
+                    <div class="val">{{ rupiah($cards['discount'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col col-3">
+                <div class="kpi">
+                    <h2>Retur</h2>
+                    <div class="val">{{ rupiah($cards['return_total'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col col-3">
+                <div class="kpi">
+                    <h2>Net Sales</h2>
+                    <div class="val">{{ rupiah($cards['net_sales'] ?? 0) }}</div>
+                </div>
             </div>
         </div>
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Biaya Lain</div>
-                <div class="value">{{ idr($cards['other_expense'] ?? 0) }}</div>
-            </div>
-        </div>
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">Jumlah Transaksi</div>
-                <div class="value">{{ nf($cards['trx_count'] ?? 0) }}</div>
-            </div>
-        </div>
-        <div class="col col-3">
-            <div class="card">
-                <div class="label">AOV</div>
-                <div class="value">{{ idr($cards['aov'] ?? 0) }}</div>
-            </div>
-        </div>
-    </div>
 
-    {{-- TREN PENJUALAN (TABLE) --}}
-    <div class="section-title">Tren Penjualan per Tanggal</div>
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 30%">Tanggal</th>
-                <th class="right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($trend as $t)
-                <tr>
-                    <td>{{ \Carbon\Carbon::parse($t->d ?? ($t['d'] ?? ''))->format('d M Y') }}</td>
-                    <td class="right">{{ idr($t->total ?? ($t['total'] ?? 0)) }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="2" class="center muted">Tidak ada data</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    {{-- BREAKDOWN METODE PEMBAYARAN --}}
-    <div class="section-title">Metode Pembayaran</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Metode</th>
-                <th class="right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($methods as $m)
-                <tr>
-                    <td>{{ strtoupper($m->method ?? ($m['method'] ?? '-')) }}</td>
-                    <td class="right">{{ idr($m->total ?? ($m['total'] ?? 0)) }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="2" class="center muted">Tidak ada data</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    <div class="page-break"></div>
-
-    {{-- TOP PRODUK & TOP CUSTOMER --}}
-    <div class="row">
-        <div class="col col-6">
-            <div class="section-title">Top Produk</div>
-            <table>
+        {{-- ===== Trend (tabel sederhana agar kompatibel PDF) ===== --}}
+        @if ($trend->count())
+            <div class="section-title">Trend Penjualan</div>
+            <table class="table-compact">
                 <thead>
                     <tr>
-                        <th>Produk</th>
-                        <th class="right">Qty</th>
-                        <th class="right">Omzet</th>
+                        <th class="w-40">Tanggal</th>
+                        <th class="money">Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($top_products as $p)
+                    @foreach ($trend as $t)
                         <tr>
-                            <td>{{ $p->name ?? ($p['name'] ?? '-') }}</td>
-                            <td class="right">{{ nf($p->qty ?? ($p['qty'] ?? 0)) }}</td>
-                            <td class="right">{{ idr($p->omzet ?? ($p['omzet'] ?? 0)) }}</td>
+                            <td class="nowrap">{{ tgl($t->d ?? ($t['d'] ?? null)) }}</td>
+                            <td class="money">{{ rupiah($t->total ?? ($t['total'] ?? 0)) }}</td>
                         </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        {{-- ===== Top Produk & Top Pelanggan (side-by-side) ===== --}}
+        <div class="row mt-3">
+            <div class="col col-6">
+                <div class="section-title">Top Produk</div>
+                <table class="table-compact">
+                    <thead>
+                        <tr>
+                            <th>Produk</th>
+                            <th class="money w-12">Qty</th>
+                            <th class="money w-40">Omzet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($top_products as $p)
+                            <tr>
+                                <td>{{ $p->name ?? ($p['name'] ?? '-') }}</td>
+                                <td class="money">
+                                    {{ number_format((float) ($p->qty ?? ($p['qty'] ?? 0)), 0, ',', '.') }}
+                                </td>
+                                <td class="money">{{ rupiah($p->omzet ?? ($p['omzet'] ?? 0)) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center muted">Tidak ada data</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="col col-6">
+                <div class="section-title">Top Pelanggan</div>
+                <table class="table-compact">
+                    <thead>
+                        <tr>
+                            <th>Pelanggan</th>
+                            <th class="money w-12">Transaksi</th>
+                            <th class="money w-40">Omzet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($top_customers as $cst)
+                            <tr>
+                                <td>{{ $cst->customer ?? ($cst['customer'] ?? '-') }}</td>
+                                <td class="money">
+                                    {{ number_format((int) ($cst->trx_count ?? ($cst['trx_count'] ?? 0)), 0, ',', '.') }}
+                                </td>
+                                <td class="money">{{ rupiah($cst->omzet ?? ($cst['omzet'] ?? 0)) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center muted">Tidak ada data</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- ===== Daftar Transaksi (bisa panjang, thead akan repeat) ===== --}}
+        <div class="section-title mt-3">Detail Transaksi</div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="w-12">Tanggal</th>
+                    <th class="w-12">Nomor Invoice</th>
+                    <th>Customer</th>
+                    <th>Sales</th>
+                    <th class="money w-12">Subtotal</th>
+                    <th class="money w-10">Diskon</th>
+                    <th class="money w-10">Retur</th>
+                    <th class="money w-12">Total</th>
+                    <th class="w-10">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($invoices as $row)
+                    <tr>
+                        <td class="nowrap">{{ tgl($row->date ?? ($row['date'] ?? null)) }}</td>
+                        <td class="nowrap">{{ $row->invoice_number ?? ($row['invoice_number'] ?? '-') }}</td>
+                        <td>{{ $row->customer ?? ($row['customer'] ?? '-') }}</td>
+                        <td>{{ $row->sales ?? ($row['sales'] ?? '-') }}</td>
+                        <td class="money">{{ rupiah($row->subtotal ?? ($row['subtotal'] ?? 0)) }}</td>
+                        <td class="money">{{ rupiah($row->discount ?? ($row['discount'] ?? 0)) }}</td>
+                        <td class="money">{{ rupiah($row->return_total ?? ($row['return_total'] ?? 0)) }}</td>
+                        <td class="money">{{ rupiah($row->total ?? ($row['total'] ?? 0)) }}</td>
+                        <td class="nowrap text-center">
+                            @switch($row->status ?? $row['status'] ?? '-')
+                                @case('success')
+                                    <span class="badge badge-sm bg-success">Lunas</span>
+                                @break
+
+                                @case('process')
+                                    <span class="badge badge-sm bg-warning">Diproses</span>
+                                @break
+
+                                @default
+                                    <span class="badge badge-sm bg-light">-</span>
+                            @endswitch
+                        </td>
+                    </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="center muted">Tidak ada data</td>
+                            <td colspan="11" class="text-center muted">Tidak ada data</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
 
-        <div class="col col-6">
-            <div class="section-title">Top Pelanggan</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Pelanggan</th>
-                        <th class="right">Transaksi</th>
-                        <th class="right">Omzet</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($top_customers as $c)
-                        <tr>
-                            <td>{{ $c->customer ?? ($c['customer'] ?? '-') }}</td>
-                            <td class="right">{{ nf($c->trx_count ?? ($c['trx_count'] ?? 0)) }}</td>
-                            <td class="right">{{ idr($c->omzet ?? ($c['omzet'] ?? 0)) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="center muted">Tidak ada data</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+        </main>
+    </body>
 
-    {{-- DETAIL TRANSAKSI --}}
-    <div class="section-title">Detail Transaksi</div>
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 12%">Tanggal</th>
-                <th style="width: 12%">No. Invoice</th>
-                <th>Pelanggan</th>
-                <th>Sales</th>
-                <th class="right">Subtotal</th>
-                <th class="right">Diskon</th>
-                <th class="right">Pajak</th>
-                <th class="right">Retur</th>
-                <th class="right">Total</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($invoices as $r)
-                @php
-                    $status = strtolower($r->status ?? ($r['status'] ?? ''));
-                    $badgeClass =
-                        $status === 'paid' ? 'bg-success' : ($status === 'partial' ? 'bg-warning' : 'bg-secondary');
-                @endphp
-                <tr>
-                    <td>{{ \Carbon\Carbon::parse($r->date ?? ($r['date'] ?? ''))->format('d M Y') }}</td>
-                    <td>{{ $r->id ?? ($r['id'] ?? ($r->invoice_no ?? ($r['invoice_no'] ?? '-'))) }}</td>
-                    <td>{{ $r->customer ?? ($r['customer'] ?? '-') }}</td>
-                    <td>{{ $r->sales ?? ($r['sales'] ?? '-') }}</td>
-                    <td class="right">{{ idr($r->subtotal ?? ($r['subtotal'] ?? 0)) }}</td>
-                    <td class="right">{{ idr($r->discount ?? ($r['discount'] ?? 0)) }}</td>
-                    <td class="right">{{ idr($r->tax ?? ($r['tax'] ?? 0)) }}</td>
-                    <td class="right">{{ idr($r->return_total ?? ($r['return_total'] ?? 0)) }}</td>
-                    <td class="right">{{ idr($r->total ?? ($r['total'] ?? 0)) }}</td>
-                    <td><span class="badge {{ $badgeClass }}">{{ strtoupper($status ?: '-') }}</span></td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="10" class="center muted">Tidak ada data</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    {{-- FOOTER KECIL --}}
-    <div class="small muted" style="margin-top:6px;">
-        *Laporan dihasilkan oleh sistem pada {{ now()->format('d M Y H:i') }}. Angka dibulatkan ke rupiah terdekat.
-    </div>
-</body>
-
-</html>
+    </html>

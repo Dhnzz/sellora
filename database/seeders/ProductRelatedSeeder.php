@@ -32,12 +32,15 @@ class ProductRelatedSeeder extends Seeder
         // }
         
         // Product (buat 20 produk dengan format: Produk 1 (Brand Name), Produk 2 (Brand Name), dst)
+        // 7 produk pertama akan memiliki diskon acak, sisanya diskon 0
         for ($i = 1; $i <= 20; $i++) {
             $brand = $productBrands->random();
+            $discount = ($i <= 7) ? $faker->randomFloat(2, 0.05, 0.5) : 0; // 7 produk pertama diskon 5%-30%, sisanya 0
             $product = Product::create([
                 'product_brand_id' => $brand->id,
                 'name' => 'Produk ' . $i . ' (' . $brand->name . ')',
                 'minimum_selling_unit_id' => $productUnits->id,
+                'discount' => $discount,
                 'selling_price' => round($faker->numberBetween(10000, 500000), -2), // Harga acak dibulatkan ke ratusan
                 'image' => 'uploads/images/products/product-1.png', 
             ]);

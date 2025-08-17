@@ -135,21 +135,39 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="control-label mb-1">Harga Jual (MSU) <span class="text-danger">*</span></label>
-                            <div class="input-group mb-3">
-                                <span class="input-group-text">Rp.</span>
-                                <input type="text" id="selling_price"
-                                    class="form-control @error('selling_price') is-invalid @enderror format-ribuan"
-                                    value="{{ $product->selling_price }}" data-target="selling_price_raw">
-                                <span class="input-group-text">.00</span>
-                                @error('selling_price')
-                                    <small class="invalid-feedback">
-                                        {{ $message }}
-                                    </small>
-                                @enderror
+                        <div class="mb-3 row row-cols-1 row-cols-md-2">
+                            <div class="col-12 col-md-6 mb-3 mb-md-0">
+                                <label class="control-label mb-1">Harga Jual (MSU) <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">Rp.</span>
+                                    <input type="text" id="selling_price"
+                                        class="form-control @error('selling_price') is-invalid @enderror format-ribuan"
+                                        value="{{ $product->selling_price }}" data-target="selling_price_raw">
+                                    <span class="input-group-text">.00</span>
+                                    @error('selling_price')
+                                        <small class="invalid-feedback">
+                                            {{ $message }}
+                                        </small>
+                                    @enderror
+                                </div>
+                                <input type="hidden" name="selling_price" id="selling_price_raw">
                             </div>
-                            <input type="hidden" name="selling_price" id="selling_price_raw">
+                            <div class="col-12 col-md-4">
+                                <label class="control-label mb-1">Diskon Produk</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" id="discount" name="discount"
+                                        class="form-control @error('discount') is-invalid @enderror"
+                                        value="{{ ($product->discount * 100) }}" max="99" min="0" maxlength="2"
+                                        oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);">
+                                    <span class="input-group-text">%</span>
+                                    @error('discount')
+                                        <small class="invalid-feedback">
+                                            {{ $message }}
+                                        </small>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="control-label mb-1">Stok (Opsional)</label>
@@ -291,7 +309,8 @@
                         },
                         success: function(response) {
                             if (response.success) {
-                                $('#productImagePreview').attr('src', "{{ asset('') }}" + response
+                                $('#productImagePreview').attr('src', "{{ asset('') }}" +
+                                    response
                                     .image);
                                 toastr.success(response.success);
                             } else if (response.error) {

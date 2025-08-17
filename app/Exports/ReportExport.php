@@ -3,10 +3,13 @@
 namespace App\Exports;
 
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Reader\Xml\Style\NumberFormat;
 
-class ReportExport implements FromCollection, WithHeadings
+class ReportExport implements FromCollection, WithHeadings, WithColumnFormatting, ShouldAutoSize
 {
     public function __construct(private array $filters, private $from, private $to) {}
 
@@ -46,5 +49,15 @@ class ReportExport implements FromCollection, WithHeadings
     public function headings(): array
     {
         return ['Invoice No', 'Tanggal', 'Customer', 'Sales', 'Subtotal', 'Diskon', 'Retur', 'Total', 'Status'];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'E' => '"Rp" #,##0_-',
+            'F' => '"Rp" #,##0_-',
+            'G' => '"Rp" #,##0_-',
+            'H' => '"Rp" #,##0_-',
+        ];
     }
 }

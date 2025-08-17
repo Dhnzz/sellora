@@ -23,7 +23,8 @@
     <div class="shop-detail">
         <div class="card shadow-none border">
             <div class="card-body p-4">
-                <a href="{{ route('owner.master_data.product.index') }}" class="btn btn-sm btn-primary mb-3"><i class="ti ti-arrow-left"></i>
+                <a href="{{ route('owner.master_data.product.index') }}" class="btn btn-sm btn-primary mb-3"><i
+                        class="ti ti-arrow-left"></i>
                     Kembali</a>
 
                 <div class="row g-4">
@@ -62,6 +63,21 @@
                                         <p class="col-auto col-md-1">:</p>
                                         <p class="col-12 col-md-6">
                                             {{ 'Rp ' . number_format($product->selling_price, 0, ',', '.') }}</p>
+                                    </div>
+                                    <div class="row row-cols-2 row-cols-md-3 mb-3 mb-md-1">
+                                        <p class="col-6 col-md-3 fw-bolder">Diskon Produk</p>
+                                        <p class="col-auto col-md-1">:</p>
+                                        <p class="col-12 col-md-6">{{ $product->discount * 100 . '%' }}</p>
+                                    </div>
+                                    @php
+                                        $discount = $product->discount * $product->selling_price;
+                                    @endphp
+                                    <div class="row row-cols-2 row-cols-md-3 mb-3 mb-md-1">
+                                        <p class="col-6 col-md-3 fw-bolder">Harga setelah diskon</p>
+                                        <p class="col-auto col-md-1">:</p>
+                                        <p class="col-12 col-md-6">
+                                            {{ 'Rp ' . number_format($product->selling_price - $discount, 0, ',', '.') }}
+                                        </p>
                                     </div>
                                     <div class="row row-cols-2 row-cols-md-3 mb-3 mb-md-1">
                                         <p class="col-6 col-md-3 fw-bolder">Didaftarkan Pada</p>
@@ -449,7 +465,7 @@
 
                 // Log data form ke console (untuk debugging)
                 for (var pair of formData.entries()) {
-                    console.log(pair[0]+ ': ' + pair[1]);
+                    console.log(pair[0] + ': ' + pair[1]);
                 }
 
                 // --- PERBAIKAN DI SINI: Reset container error ---

@@ -1,21 +1,22 @@
 <?php
 
-use App\Http\Controllers\FrontController;
-use App\Http\Controllers\ProductBrandController;
-use App\Http\Controllers\ProductBundleController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\SalesTransactionController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\UnitConvertionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ShopController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\FrontController;
 use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SalesAgentController;
 use App\Http\Controllers\ProductUnitController;
+use App\Http\Controllers\ProductBrandController;
+use App\Http\Controllers\ProductBundleController;
+use App\Http\Controllers\UnitConvertionController;
+use App\Http\Controllers\SalesTransactionController;
 use App\Http\Controllers\WarehouseManagerController;
 
 Route::get('/', function () {
@@ -99,10 +100,12 @@ Route::middleware(['auth'])->group(function () {
                 ->group(function () {
                     Route::get('/', [ReportController::class, 'index'])->name('index');
                     Route::get('/data', [ReportController::class, 'data'])->name('data'); // AJAX data (cards, table, chart)
-                    Route::get('/invoices', [ReportController::class, 'invoicesData'])->name('invoices'); 
+                    Route::get('/invoices', [ReportController::class, 'invoicesData'])->name('invoices');
                     Route::get('/export/xlsx', [ReportController::class, 'exportXlsx'])->name('export.xlsx');
                     Route::get('/export/csv', [ReportController::class, 'exportCsv'])->name('export.csv');
                     Route::get('/export/pdf', [ReportController::class, 'exportPdf'])->name('export.pdf');
+                    Route::get('/invoices/{id}', [ReportController::class, 'invoiceShow'])->name('invoice.show'); // 🔍 detail
+                    Route::get('/invoice/{id}/pdf', [ReportController::class, 'exportInvoicePdf'])->name('invoice.pdf');
                 });
 
             // User Management
@@ -228,6 +231,7 @@ Route::middleware(['auth'])->group(function () {
                         ->group(function () {
                             Route::get('/', [ProductController::class, 'index'])->name('index');
                             Route::get('/data', [ProductController::class, 'getAll'])->name('data');
+                            Route::get('/test', [ProductController::class, 'test'])->name('test');
                             Route::get('/create', [ProductController::class, 'create'])->name('create');
                             Route::post('/store', [ProductController::class, 'store'])->name('store');
                             Route::put('/deleteImage/{product}', [ProductController::class, 'deleteImage'])->name('deleteImage');
@@ -329,6 +333,7 @@ Route::middleware(['auth'])->group(function () {
         ->prefix('customer')
         ->name('customer.')
         ->group(function () {
-            Route::get('/', [FrontController::class, 'index'])->name('index');
+            Route::get('/home', [ShopController::class, 'home'])->name('home');
+            Route::get('/catalog', [ShopController::class, 'catalog'])->name('catalog');
         });
 });

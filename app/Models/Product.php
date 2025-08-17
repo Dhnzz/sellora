@@ -23,6 +23,7 @@ class Product extends Model
         'product_brand_id',
         'name',
         'minimum_selling_unit_id',
+        'discount',
         'selling_price',
         'image'
     ];
@@ -58,14 +59,14 @@ class Product extends Model
         return $this->hasMany(SalesTransactionItem::class, 'product_id');
     }
 
-    public function product_return_items(): HasMany
+    public function delivery_return_items(): HasMany
     {
-        return $this->hasMany(ProductReturnItem::class, 'product_id');
+        return $this->hasMany(DeliveryReturnItem::class, 'product_id');
     }
 
-    public function incoming_supply_transaction_items(): HasMany
+    public function supplier_purchase_items(): HasMany
     {
-        return $this->hasMany(IncomingSupplyTransactionItem::class, 'product_id');
+        return $this->hasMany(SupplierPurchaseItem::class, 'product_id');
     }
 
     public function stock_adjustments(): HasMany
